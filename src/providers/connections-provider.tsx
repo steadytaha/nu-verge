@@ -43,6 +43,18 @@ export type ConnectionProviderProps = {
   >
   isLoading: boolean
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  notionDetails: {
+    class?: string
+    type?: string
+    reviewed?: boolean
+  },
+  setNotionDetails: React.Dispatch<
+  React.SetStateAction<{
+    class?: string
+    type?: string
+    reviewed?: boolean
+  }>
+>
 }
 
 type ConnectionWithChildProps = {
@@ -78,6 +90,11 @@ const InitialValues: ConnectionProviderProps = {
     teamName: '',
     content: '',
   },
+  notionDetails: {
+    class: '',
+    type: '',
+    reviewed: false,
+  },
   isLoading: false,
   setGoogleNode: () => undefined,
   setDiscordNode: () => undefined,
@@ -85,6 +102,7 @@ const InitialValues: ConnectionProviderProps = {
   setSlackNode: () => undefined,
   setIsLoading: () => undefined,
   setWorkFlowTemplate: () => undefined,
+  setNotionDetails: () => undefined,
 }
 
 const ConnectionsContext = createContext(InitialValues)
@@ -96,6 +114,7 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
   const [notionNode, setNotionNode] = useState(InitialValues.notionNode)
   const [slackNode, setSlackNode] = useState(InitialValues.slackNode)
   const [isLoading, setIsLoading] = useState(InitialValues.isLoading)
+  const [notionDetails, setNotionDetails] = useState(InitialValues.notionDetails)
   const [workflowTemplate, setWorkFlowTemplate] = useState(
     InitialValues.workflowTemplate
   )
@@ -113,6 +132,8 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
     setIsLoading,
     workflowTemplate,
     setWorkFlowTemplate,
+    notionDetails,
+    setNotionDetails,
   }
 
   return <Provider value={values}>{children}</Provider>

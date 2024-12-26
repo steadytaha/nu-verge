@@ -83,7 +83,8 @@ const ActionButton = ({ currentService, nodeConnection, channels, setChannels }:
     const response = await onCreateNewPageInDatabase(
       nodeConnection.notionNode.databaseId,
       nodeConnection.notionNode.accessToken,
-      nodeConnection.notionNode.content
+      nodeConnection.notionNode.content,
+      nodeConnection.notionDetails
     )
     if (response) {
       nodeConnection.setNotionNode((prev: any) => ({

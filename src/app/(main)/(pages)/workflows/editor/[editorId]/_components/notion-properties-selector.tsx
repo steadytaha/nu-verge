@@ -3,9 +3,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ConnectionProviderProps } from "@/providers/connections-provider"
 
 type Props = {
-  nodeConnection: any;
+  nodeConnection: ConnectionProviderProps;
   onPropertyChange: (property: string, value: any) => void;
 }
 
@@ -25,7 +26,17 @@ const NotionPropertiesSelector = ({ nodeConnection, onPropertyChange }: Props) =
       [property]: value
     };
     setProperties(updatedProperties);
-    console.log('Updated Properties:', updatedProperties);
+    nodeConnection.setNotionDetails({
+      class: updatedProperties.Class,
+      type: updatedProperties.Type,
+      reviewed: updatedProperties.Reviewed
+    });
+    
+    /*console.log('Updated Properties:', {
+      class: updatedProperties.Class,
+      type: updatedProperties.Type,
+      reviewed: updatedProperties.Reviewed
+    });*/
     onPropertyChange(property, value);
   };
 

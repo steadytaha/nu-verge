@@ -1,7 +1,7 @@
 'use server'
 import { db } from '@/lib/db'
 import { currentUser } from '@clerk/nextjs/server'
-import { Client } from '@notionhq/client' 
+import { Client } from '@notionhq/client'
 
 export const onNotionConnect = async (
   access_token: string,
@@ -62,10 +62,17 @@ export const getNotionConnection = async () => {
   }
 }
 
+type NotionDetails = {
+  class?: string,
+  type?: string,
+  reviewed?: boolean,
+}
+
 export const onCreateNewPageInDatabase = async (
   databaseId: string,
   accessToken: string,
-  content: string,    
+  content: string, 
+  notionDetails: NotionDetails
 ) => {
   const notion = new Client({
     auth: accessToken,
@@ -93,7 +100,7 @@ export const onCreateNewPageInDatabase = async (
     if (response) {
       const pageInfo = await getNotionPage(response.id, accessToken)
       console.log('Page Info:', pageInfo)
-      await updateNotionPage(response.id, accessToken)
+      await updateNotionPage(response.id, accessToken, notionDetails)
       return response
     }
   } catch (error) {
@@ -103,7 +110,7 @@ export const onCreateNewPageInDatabase = async (
 }
 
 
-export const updateNotionPage = async (pageId: string, accessToken: string) => {
+export const updateNotionPage = async (pageId: string, accessToken: string, notionDetails: NotionDetails) => {
   const notion = new Client({
     auth: accessToken,
   })
@@ -113,16 +120,16 @@ export const updateNotionPage = async (pageId: string, accessToken: string) => {
       page_id: pageId,
       properties: {
         'Reviewed': {
-          checkbox: true,  // There should be a varible
+          checkbox: notionDetails.reviewed || false,
         },
         'Class': {
           select: { 
-            name: 'ESOF 202' // There should be a varible
+            name: notionDetails.class || ''
           }
         },
         'Type': {
           select: { 
-            name: 'Lecture' // There should be a varible
+            name: notionDetails.type || ''
           }
         },
       },

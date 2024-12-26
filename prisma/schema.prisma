@@ -125,3 +125,10 @@ model Workflows {
   User              User     @relation(fields: [userId], references: [clerkId])
   userId            String
 }
+
+model NotionDetails {
+  id                String   @id @default(uuid())
+  class     String?
+  type      String?
+  reviewed  Boolean? @default(false)         
+}
