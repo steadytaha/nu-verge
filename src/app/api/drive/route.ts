@@ -1,35 +1,52 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
+import axios from 'axios';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
 async function getGoogleAccessToken() {
   try {
     console.log("Starting getGoogleAccessToken...");
-    const { getToken } = await auth()
     const user = await currentUser();
-    
-    console.log("Current user:", user?.id);
-    console.log("OAuth accounts:", user?.externalAccounts);
 
     if (!user) {
       throw new Error('No user found');
     }
 
-    const oauthAccounts = user.externalAccounts;
-    const googleAccount = oauthAccounts.find(
-      (account) => account.provider === 'google'
-    );
-
-    console.log("Google account found:", googleAccount?.provider);
-
-    if (!googleAccount) {
-      throw new Error('No Google account connected');
-    }
-
     try {
-      const token = await getToken({
-        template: 'oauth_google',
-      });
+      async function sendRequest() {
+        const url = `https://api.clerk.com/v1/users/${user?.id}/oauth_access_tokens/oauth_google`;
+        
+        // Headers
+        const headers = {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        };
+        
+        try {
+          const response = await axios({
+            method: 'get',
+            url,
+            headers,
+          });
+
+          return response;
+        } catch (error: any) {
+          if (error.response) {
+            console.error('Error Response:', error.response.data);
+          } else if (error.request) {
+            console.error('No Response Received:', error.request);
+          } else {
+            console.error('Request Setup Error:', error.message);
+          }
+          return undefined;
+        }
+      }
+      
+      const response = await sendRequest();
+      if (!response) {
+        throw new Error('Failed to retrieve response from sendRequest');
+      }
+      const token = response.data[0].token;
       
       console.log("Access token obtained:", token ? "Success" : "Failed");
       return token;
