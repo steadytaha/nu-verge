@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getGoogleListener } from "../../../_actions/workflow-connections";
 import { Card, CardDescription } from "@/components/ui/card";
 import { CardContainer } from "@/components/global/3d-card";
-import { Button } from "@/components/ui/button";
+
 import {
   Select,
   SelectContent,
@@ -15,17 +15,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { GoogleDriveFile } from "@/lib/types";
+import { useAutoStore } from "@/store";
 type Props = {};
 
-const GoogleDriveFiles = (props: Props) => {
+const GoogleDriveFiles = ({}: Props) => {
+  const globalStore=useAutoStore();
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
-  const [files, setFiles] = useState<any[]>([]);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [files, setFiles] = useState<GoogleDriveFile[]>(
+    globalStore.googleDriveFiles
+  );
+  // const [selectedFile, setSelectedFile] = useState(nodeConnection.selectedGoogleDriveFile);
 
   const reqGoogle = async () => {
+    if (files.length > 0) return;
     setLoading(true);
     try {
       console.log("=== START: Frontend Request ===");
@@ -47,6 +52,7 @@ const GoogleDriveFiles = (props: Props) => {
 
         // Update state
         await setFiles(response.data.message.files);
+        globalStore.setGoogleDriveFiles(response.data.message.files);
 
         // Log the files being set
         console.log("Setting files:", response.data.message.files);
@@ -84,7 +90,8 @@ const GoogleDriveFiles = (props: Props) => {
 
   const handleSelectedChange = (id: string) => {
     const file = files.find((file) => file.id === id);
-    setSelectedFile(file);
+    if (!file) return;
+    globalStore.setSelectedGoogleDriveFile(file);
   };
 
   useEffect(() => {
@@ -122,7 +129,10 @@ const GoogleDriveFiles = (props: Props) => {
               </svg>
             </div>
           ) : (
-            <Select onValueChange={(value) => handleSelectedChange(value)}>
+            <Select
+              defaultValue={globalStore.selectedGoogleDriveFile?.id || ""}
+              onValueChange={(value) => handleSelectedChange(value)}
+            >
               <SelectTrigger className="w-[280px]">
                 <SelectValue placeholder="Select a file" />
               </SelectTrigger>
