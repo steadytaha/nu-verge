@@ -1,37 +1,51 @@
-import React, { useState } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ConnectionProviderProps } from "@/providers/connections-provider"
-
+import React, { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConnectionProviderProps } from "@/providers/connections-provider";
+import { useAutoStore } from "@/store";
 type Props = {
   nodeConnection: ConnectionProviderProps;
   onPropertyChange: (property: string, value: any) => void;
-}
+};
 
-
-const NotionPropertiesSelector = ({ nodeConnection, onPropertyChange }: Props) => {
+const NotionPropertiesSelector = ({
+  nodeConnection,
+  onPropertyChange,
+}: Props) => {
   // Create a state to store all properties
+  const { notionDetails, setNotionDetails } = useAutoStore();
   const [properties, setProperties] = useState({
-    Class: '',
-    Type: '',
-    Reviewed: false
+    Class: notionDetails.class,
+    Type: notionDetails.type,
+    Reviewed: notionDetails.reviewed,
   });
-
+  console.log("Notion Details:", notionDetails);
   // Helper function to update properties
   const handlePropertyChange = (property: string, value: any) => {
     const updatedProperties = {
       ...properties,
-      [property]: value
+      [property]: value,
     };
     setProperties(updatedProperties);
+    setNotionDetails({
+      class: updatedProperties.Class,
+      type: updatedProperties.Type,
+      reviewed: updatedProperties.Reviewed,
+    });
     nodeConnection.setNotionDetails({
       class: updatedProperties.Class,
       type: updatedProperties.Type,
-      reviewed: updatedProperties.Reviewed
+      reviewed: updatedProperties.Reviewed,
     });
-    
+
     /*console.log('Updated Properties:', {
       class: updatedProperties.Class,
       type: updatedProperties.Type,
@@ -48,7 +62,10 @@ const NotionPropertiesSelector = ({ nodeConnection, onPropertyChange }: Props) =
       <CardContent className="flex flex-col gap-4">
         <div className="space-y-2">
           <Label>Class</Label>
-          <Select onValueChange={(value) => handlePropertyChange('Class', value)}>
+          <Select
+            value={properties.Class}
+            onValueChange={(value) => handlePropertyChange("Class", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select class" />
             </SelectTrigger>
@@ -62,7 +79,10 @@ const NotionPropertiesSelector = ({ nodeConnection, onPropertyChange }: Props) =
 
         <div className="space-y-2">
           <Label>Type</Label>
-          <Select onValueChange={(value) => handlePropertyChange('Type', value)}>
+          <Select
+            value={properties.Type}
+            onValueChange={(value) => handlePropertyChange("Type", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -77,15 +97,18 @@ const NotionPropertiesSelector = ({ nodeConnection, onPropertyChange }: Props) =
         </div>
 
         <div className="flex items-center space-x-2">
-          <Checkbox 
+          <Checkbox
+            checked={properties.Reviewed}
             id="reviewed"
-            onCheckedChange={(checked) => handlePropertyChange('Reviewed', checked)}
+            onCheckedChange={(checked) =>
+              handlePropertyChange("Reviewed", checked)
+            }
           />
           <Label htmlFor="reviewed">Reviewed</Label>
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default NotionPropertiesSelector 
+export default NotionPropertiesSelector;

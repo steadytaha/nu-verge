@@ -25,6 +25,18 @@ type AutoStore = {
   setSelectedSlackChannels: (selectedSlackChannels: Option[]) => void;
   slackMessage: string;
   setSlackMessage: (slackMessage: string) => void;
+  notionDetails: {
+    class?: string;
+    type?: string;
+    reviewed?: boolean;
+  };
+  setNotionDetails: (notionDetails: {
+    class?: string;
+    type?: string;
+    reviewed?: boolean;
+  }) => void;
+  notionValue: string;
+  setNotionValue: (notionValue: string) => void;
 };
 
 export const useAutoStore = create<AutoStore>()((set) => ({
@@ -44,8 +56,12 @@ export const useAutoStore = create<AutoStore>()((set) => ({
     set({ selectedSlackChannels }),
   slackMessage: "",
   setSlackMessage: (slackMessage: string) => set({ slackMessage }),
+  notionDetails: {
+    class: "",
+    type: "",
+    reviewed: false,
+  },
+  setNotionDetails: (notionDetails) => set({ notionDetails }),
+  notionValue: "",
+  setNotionValue: (notionValue) => set({ notionValue }),
 }));
-export const getSlackMessage = () => {
-  const { slackMessage } = useAutoStore.getState();
-  return slackMessage;
-};

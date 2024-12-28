@@ -54,7 +54,7 @@ const ContentBasedOnTitle = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { setSlackMessage, slackMessage } = useAutoStore();
+  const { setSlackMessage,setNotionValue } = useAutoStore();
 
 
   // useEffect(() => {
@@ -158,6 +158,9 @@ const ContentBasedOnTitle = ({
                 onContentChange(nodeConnection, title, event);
                 if (title === "Slack") {
                   setSlackMessage(event.target.value);
+                }
+                if (title === "Notion") {
+                  setNotionValue(event.target.value);
                 }
               }}
               placeholder={`Enter your ${title} message here`}

@@ -125,16 +125,14 @@ export const onConnections = async (
   }
   if (editorState.editor.selectedNode.data.title == "Notion") {
     const connection = await getNotionConnection();
+    const { notionValue } = useAutoStore.getState();
+
     if (connection) {
       nodeConnection.setNotionNode({
         accessToken: connection.accessToken,
         databaseId: connection.databaseId,
         workspaceName: connection.workspaceName,
-        content: {
-          name: googleFile.name,
-          kind: googleFile.kind,
-          type: googleFile.mimeType,
-        },
+        content: notionValue,
       });
 
       if (nodeConnection.notionNode.databaseId !== "") {
