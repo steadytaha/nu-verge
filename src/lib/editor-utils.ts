@@ -1,10 +1,17 @@
-import { ConnectionProviderProps } from '@/providers/connections-provider'
-import { EditorCanvasCardType } from './types'
-import { EditorState } from '@/providers/editor-provider'
-import { getDiscordConnectionUrl } from '@/app/(main)/(pages)/connections/_actions/discord-connection'
-import { getNotionConnection, getNotionDatabase } from '@/app/(main)/(pages)/connections/_actions/notion-connection'
-import { getSlackConnection, listBotChannels } from '@/app/(main)/(pages)/connections/_actions/slack-connection'
-import { Option } from '@/store'
+import { ConnectionProviderProps } from "@/providers/connections-provider";
+import { EditorCanvasCardType } from "./types";
+import { EditorState } from "@/providers/editor-provider";
+import { getDiscordConnectionUrl } from "@/app/(main)/(pages)/connections/_actions/discord-connection";
+import {
+  getNotionConnection,
+  getNotionDatabase,
+} from "@/app/(main)/(pages)/connections/_actions/notion-connection";
+import {
+  getSlackConnection,
+  listBotChannels,
+} from "@/app/(main)/(pages)/connections/_actions/slack-connection";
+import { Option, useAutoStore } from "@/store";
+// import { getSlackMessage } from "@/store";
 /*import { getDiscordConnectionUrl } from '@/app/(main)/(pages)/connections/_actions/discord-connection'
 import {
   getNotionConnection,
@@ -18,12 +25,11 @@ import { Option } from '@/components/ui/multiple-selector'*/
 
 export const onDragStart = (
   event: any,
-  nodeType: EditorCanvasCardType['type']
+  nodeType: EditorCanvasCardType["type"]
 ) => {
-  event.dataTransfer.setData('application/reactflow', nodeType)
-  event.dataTransfer.effectAllowed = 'move'
-}
-
+  event.dataTransfer.setData("application/reactflow", nodeType);
+  event.dataTransfer.effectAllowed = "move";
+};
 
 export const onSlackContent = (
   nodeConnection: ConnectionProviderProps,
@@ -32,8 +38,8 @@ export const onSlackContent = (
   nodeConnection.setSlackNode((prev: any) => ({
     ...prev,
     content: event.target.value,
-  }))
-}
+  }));
+};
 
 export const onDiscordContent = (
   nodeConnection: ConnectionProviderProps,
@@ -42,8 +48,8 @@ export const onDiscordContent = (
   nodeConnection.setDiscordNode((prev: any) => ({
     ...prev,
     content: event.target.value,
-  }))
-}
+  }));
+};
 
 export const onNotionContent = (
   nodeConnection: ConnectionProviderProps,
@@ -52,22 +58,22 @@ export const onNotionContent = (
   nodeConnection.setNotionNode((prev: any) => ({
     ...prev,
     content: event.target.value,
-  }))
-}
+  }));
+};
 
 export const onContentChange = (
   nodeConnection: ConnectionProviderProps,
   nodeType: string,
   event: React.ChangeEvent<HTMLInputElement>
 ) => {
-  if (nodeType === 'Slack') {
-    onSlackContent(nodeConnection, event)
-  } else if (nodeType === 'Discord') {
-    onDiscordContent(nodeConnection, event)
-  } else if (nodeType === 'Notion') {
-    onNotionContent(nodeConnection, event)
+  if (nodeType === "Slack") {
+    onSlackContent(nodeConnection, event);
+  } else if (nodeType === "Discord") {
+    onDiscordContent(nodeConnection, event);
+  } else if (nodeType === "Notion") {
+    onNotionContent(nodeConnection, event);
   }
-}
+};
 
 export const onAddTemplateSlack = (
   nodeConnection: ConnectionProviderProps,
@@ -76,8 +82,8 @@ export const onAddTemplateSlack = (
   nodeConnection.setSlackNode((prev: any) => ({
     ...prev,
     content: `${prev.content} ${template}`,
-  }))
-}
+  }));
+};
 
 export const onAddTemplateDiscord = (
   nodeConnection: ConnectionProviderProps,
@@ -86,39 +92,39 @@ export const onAddTemplateDiscord = (
   nodeConnection.setDiscordNode((prev: any) => ({
     ...prev,
     content: `${prev.content} ${template}`,
-  }))
-}
+  }));
+};
 
 export const onAddTemplate = (
   nodeConnection: ConnectionProviderProps,
   title: string,
   template: string
 ) => {
-  if (title === 'Slack') {
-    onAddTemplateSlack(nodeConnection, template)
-  } else if (title === 'Discord') {
-    onAddTemplateDiscord(nodeConnection, template)
+  if (title === "Slack") {
+    onAddTemplateSlack(nodeConnection, template);
+  } else if (title === "Discord") {
+    onAddTemplateDiscord(nodeConnection, template);
   }
-}
+};
 
 export const onConnections = async (
   nodeConnection: ConnectionProviderProps,
   editorState: EditorState,
   googleFile: any
 ) => {
-  if (editorState.editor.selectedNode.data.title == 'Discord') {
-    const connection = await getDiscordConnectionUrl()
+  if (editorState.editor.selectedNode.data.title == "Discord") {
+    const connection = await getDiscordConnectionUrl();
     if (connection) {
       nodeConnection.setDiscordNode({
         webhookURL: connection.url,
-        content: '',
+        content: "",
         webhookName: connection.name,
         guildName: connection.guildName,
-      })
+      });
     }
   }
-  if (editorState.editor.selectedNode.data.title == 'Notion') {
-    const connection = await getNotionConnection()
+  if (editorState.editor.selectedNode.data.title == "Notion") {
+    const connection = await getNotionConnection();
     if (connection) {
       nodeConnection.setNotionNode({
         accessToken: connection.accessToken,
@@ -129,18 +135,23 @@ export const onConnections = async (
           kind: googleFile.kind,
           type: googleFile.mimeType,
         },
-      })
+      });
 
-      if (nodeConnection.notionNode.databaseId !== '') {
+      if (nodeConnection.notionNode.databaseId !== "") {
         const response = await getNotionDatabase(
           nodeConnection.notionNode.databaseId,
           nodeConnection.notionNode.accessToken
-        )
+        );
       }
     }
   }
-  if (editorState.editor.selectedNode.data.title == 'Slack') {
-    const connection = await getSlackConnection()
+  if (editorState.editor.selectedNode.data.title == "Slack") {
+    const connection = await getSlackConnection();
+    //  const getSlackMessage = () => {
+    //   const { slackMessage } = useAutoStore.getState();
+    //   return slackMessage;
+    // };
+    const { slackMessage } = useAutoStore.getState();
     if (connection) {
       nodeConnection.setSlackNode({
         appId: connection.appId,
@@ -151,15 +162,15 @@ export const onConnections = async (
         teamId: connection.teamId,
         teamName: connection.teamName,
         userId: connection.userId,
-        content: '',
-      })
+        content: slackMessage,
+      });
     }
   }
-}
+};
 
 export const fetchBotSlackChannels = async (
   token: string,
   setSlackChannels: (slackChannels: Option[]) => void
 ) => {
-  await listBotChannels(token)?.then((channels) => setSlackChannels(channels))
-}
+  await listBotChannels(token)?.then((channels) => setSlackChannels(channels));
+};

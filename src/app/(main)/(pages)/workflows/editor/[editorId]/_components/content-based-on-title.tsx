@@ -18,6 +18,7 @@ import ActionButton from "./action-button";
 import axios, { AxiosError } from "axios";
 import { toast } from "@/hooks/use-toast";
 import NotionPropertiesSelector from "./notion-properties-selector";
+import { useAutoStore } from "@/store";
 
 export interface Option {
   value: string;
@@ -52,7 +53,9 @@ const ContentBasedOnTitle = ({
   const title = selectedNode.data.title;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
+  const { setSlackMessage, slackMessage } = useAutoStore();
+
 
   // useEffect(() => {
   //   const fetchGoogleDriveFiles = async () => {
@@ -151,12 +154,16 @@ const ContentBasedOnTitle = ({
             <Input
               type="text"
               value={nodeConnectionType.content}
-              onChange={(event) =>
-                onContentChange(nodeConnection, title, event)
-              }
-              placeholder=""
+              onChange={(event) => {
+                onContentChange(nodeConnection, title, event);
+                if (title === "Slack") {
+                  setSlackMessage(event.target.value);
+                }
+              }}
+              placeholder={`Enter your ${title} message here`}
             />
           )}
+ 
 
           {title === "Notion" && (
             <NotionPropertiesSelector

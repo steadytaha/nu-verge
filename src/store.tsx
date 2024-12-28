@@ -45,3 +45,7 @@ export const useAutoStore = create<AutoStore>()((set) => ({
   slackMessage: "",
   setSlackMessage: (slackMessage: string) => set({ slackMessage }),
 }));
+export const getSlackMessage = () => {
+  const { slackMessage } = useAutoStore.getState();
+  return slackMessage;
+};
