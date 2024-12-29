@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConnectionProviderProps } from "@/providers/connections-provider";
 import { useAutoStore } from "@/store";
+
 type Props = {
   nodeConnection: ConnectionProviderProps;
   onPropertyChange: (property: string, value: any) => void;
@@ -21,13 +22,23 @@ const NotionPropertiesSelector = ({
   onPropertyChange,
 }: Props) => {
   // Create a state to store all properties
-  const { notionDetails, setNotionDetails } = useAutoStore();
-  const [properties, setProperties] = useState({
+  const { notionDetails, setNotionDetails, notionProperties } = useAutoStore();
+  const [properties, setProperties] = useState<Record<string, any>>({
     Class: notionDetails.class,
     Type: notionDetails.type,
     Reviewed: notionDetails.reviewed,
   });
-  console.log("Notion Details:", notionDetails);
+
+  // useEffect(() => {
+  //   console.log("Retrieving Notion Page...");
+  //   getNotionDatabase(
+  //     "152e42a3-dd30-4dd6-9d74-101dff89bc81",
+  //     "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"
+  //   ).then((response) => {
+  //     console.log("Pagesss Retrieved:", response);
+  //     console.log("Properties:", notionProperties);
+  //   });
+  // }, []);
   // Helper function to update properties
   const handlePropertyChange = (property: string, value: any) => {
     const updatedProperties = {
@@ -60,52 +71,50 @@ const NotionPropertiesSelector = ({
         <CardTitle>Page Properties</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="space-y-2">
-          <Label>Class</Label>
-          <Select
-            value={properties.Class}
-            onValueChange={(value) => handlePropertyChange("Class", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ESOF 204">ESOF 204</SelectItem>
-              <SelectItem value="ESOF 202">ESOF 202</SelectItem>
-              <SelectItem value="ESOF 206">ESOF 206</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {notionProperties.map((property: any) => {
+          if (property.type === "checkbox") {
+            return (
+              <div key={property.key} className="flex items-center space-x-2">
+                <Checkbox
+                  checked={properties[property.key]}
+                  id={property.key}
+                  onCheckedChange={(checked) =>
+                    handlePropertyChange(property.key, checked)
+                  }
+                />
+                <Label htmlFor={property.key}>{property.key}</Label>
+              </div>
+            );
+          }
 
-        <div className="space-y-2">
-          <Label>Type</Label>
-          <Select
-            value={properties.Type}
-            onValueChange={(value) => handlePropertyChange("Type", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Lecture">Lecture</SelectItem>
-              <SelectItem value="Section">Section</SelectItem>
-              <SelectItem value="Seminar">Seminar</SelectItem>
-              <SelectItem value="Study Group">Study Group</SelectItem>
-              <SelectItem value="Reading">Reading</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            checked={properties.Reviewed}
-            id="reviewed"
-            onCheckedChange={(checked) =>
-              handlePropertyChange("Reviewed", checked)
-            }
-          />
-          <Label htmlFor="reviewed">Reviewed</Label>
-        </div>
+          return (
+            <div key={property.key} className="flex flex-col gap-2">
+              <Label>{property.key}</Label>
+              <Select
+                value={properties[property.key]}
+                onValueChange={(value) =>
+                  handlePropertyChange(property.key, value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={`select ${property.key.toLocaleLowerCase()}`}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {property.options &&
+                    property.options.map((option: any) => (
+                      <SelectItem key={option.name} value={option.name}>
+                        <div
+                          className={`bg-${option.color}-500 p-0.5 font-semibold`}
+                        >{`${option.name} `}</div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

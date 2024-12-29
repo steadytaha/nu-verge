@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { GoogleDriveFile } from "./lib/types";
+import { GoogleDriveFile, NotionProperty } from "./lib/types";
 
 export interface Option {
   value: string;
@@ -37,6 +37,8 @@ type AutoStore = {
   }) => void;
   notionValue: string;
   setNotionValue: (notionValue: string) => void;
+  notionProperties: NotionProperty[];
+  setNotionProperties: (notionProperties: any) => void;
 };
 
 export const useAutoStore = create<AutoStore>()((set) => ({
@@ -64,4 +66,12 @@ export const useAutoStore = create<AutoStore>()((set) => ({
   setNotionDetails: (notionDetails) => set({ notionDetails }),
   notionValue: "",
   setNotionValue: (notionValue) => set({ notionValue }),
+  notionProperties: {
+    key: "",
+    options: null,
+    type: "",
+  },
+
+  setNotionProperties: (notionProperties: NotionProperty[]) =>
+    set({ notionProperties }),
 }));

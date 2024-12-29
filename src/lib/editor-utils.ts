@@ -11,6 +11,7 @@ import {
   listBotChannels,
 } from "@/app/(main)/(pages)/connections/_actions/slack-connection";
 import { Option, useAutoStore } from "@/store";
+import { getPropertiesFromDatabase } from "./utils";
 // import { getSlackMessage } from "@/store";
 /*import { getDiscordConnectionUrl } from '@/app/(main)/(pages)/connections/_actions/discord-connection'
 import {
@@ -125,7 +126,8 @@ export const onConnections = async (
   }
   if (editorState.editor.selectedNode.data.title == "Notion") {
     const connection = await getNotionConnection();
-    const { notionValue } = useAutoStore.getState();
+
+    const { notionValue, setNotionProperties } = useAutoStore.getState();
 
     if (connection) {
       nodeConnection.setNotionNode({
@@ -134,12 +136,18 @@ export const onConnections = async (
         workspaceName: connection.workspaceName,
         content: notionValue,
       });
+      getNotionDatabase(connection.databaseId, connection.accessToken).then(
+        (response) => {}
+      );
 
       if (nodeConnection.notionNode.databaseId !== "") {
         const response = await getNotionDatabase(
           nodeConnection.notionNode.databaseId,
           nodeConnection.notionNode.accessToken
         );
+        if (response) {
+          setNotionProperties(getPropertiesFromDatabase(response.metadata));
+        }
       }
     }
   }

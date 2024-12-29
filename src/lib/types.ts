@@ -96,3 +96,9 @@ export type GoogleDriveFile = {
   mimeType: string;
   createdTime: string;
 };
+export type NotionPropertyItem = {
+  key: string;
+  options: { name: string; color: string }[] | null;
+  type: "checkbox" | "select";
+};
+export type NotionProperty = NotionPropertyItem[];

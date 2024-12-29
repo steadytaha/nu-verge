@@ -19,6 +19,7 @@ import axios, { AxiosError } from "axios";
 import { toast } from "@/hooks/use-toast";
 import NotionPropertiesSelector from "./notion-properties-selector";
 import { useAutoStore } from "@/store";
+import { Loader2 } from "lucide-react";
 
 export interface Option {
   value: string;
@@ -54,8 +55,7 @@ const ContentBasedOnTitle = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { setSlackMessage,setNotionValue } = useAutoStore();
-
+  const { setSlackMessage, setNotionValue, notionProperties } = useAutoStore();
 
   // useEffect(() => {
   //   const fetchGoogleDriveFiles = async () => {
@@ -123,10 +123,10 @@ const ContentBasedOnTitle = ({
             title === "Slack"
               ? "slackAccessToken"
               : title === "Discord"
-              ? "webhookURL"
-              : title === "Notion"
-              ? "accessToken"
-              : ""
+                ? "webhookURL"
+                : title === "Notion"
+                  ? "accessToken"
+                  : ""
           }`
         ];
 
@@ -146,8 +146,8 @@ const ContentBasedOnTitle = ({
             {title === "Notion"
               ? "Values to be stored"
               : title == "Slack"
-              ? "Message"
-              : ""}
+                ? "Message"
+                : ""}
           </p>
 
           {title !== "Google Drive" && (
@@ -166,9 +166,8 @@ const ContentBasedOnTitle = ({
               placeholder={`Enter your ${title} message here`}
             />
           )}
- 
 
-          {title === "Notion" && (
+          {title === "Notion" && notionProperties.length > 0? (
             <NotionPropertiesSelector
               nodeConnection={nodeConnection}
               onPropertyChange={(property, value) => {
@@ -181,7 +180,7 @@ const ContentBasedOnTitle = ({
                 }));
               }}
             />
-          )}
+          ):('Loading...')}
 
           {isLoading && (
             <p className="text-sm text-muted-foreground">Loading files...</p>
