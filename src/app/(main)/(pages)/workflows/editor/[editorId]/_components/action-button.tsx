@@ -9,7 +9,6 @@ import { onCreateNodeTemplate } from "../../../_actions/workflow-connections";
 import { onCreateNewPageInDatabase } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
 import { postMessageToSlack } from "@/app/(main)/(pages)/connections/_actions/slack-connection";
 import { set } from "zod";
-
 type Props = {
   currentService: string;
   nodeConnection: ConnectionProviderProps;
@@ -86,6 +85,7 @@ const ActionButton = ({
   }, [nodeConnection, channels]);
 
   const onStoreNotionContent = useCallback(async () => {
+    const { setNotionValue, setNotionDetails } = useAutoStore.getState();
     const response = await onCreateNewPageInDatabase(
       nodeConnection.notionNode.databaseId,
       nodeConnection.notionNode.accessToken,
@@ -97,6 +97,12 @@ const ActionButton = ({
         ...prev,
         content: "",
       }));
+      setNotionValue("");
+      setNotionDetails({
+        class: "",
+        type: "",
+        reviewed: false,
+      });
     }
   }, [nodeConnection.notionNode]);
 

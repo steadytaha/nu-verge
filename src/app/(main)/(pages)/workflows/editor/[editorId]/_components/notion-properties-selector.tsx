@@ -64,6 +64,13 @@ const NotionPropertiesSelector = ({
     });*/
     onPropertyChange(property, value);
   };
+  useEffect(() => {
+    setProperties({
+      Class: notionDetails.class,
+      Type: notionDetails.type,
+      Reviewed: notionDetails.reviewed,
+    });
+  }, [notionDetails]);
 
   return (
     <Card className="mt-4">

@@ -98,8 +98,8 @@ export const onCreateNewPageInDatabase = async (
     })
 
     if (response) {
-      const pageInfo = await getNotionPage(response.id, accessToken)
-      console.log('Page Info:', pageInfo)
+      // const pageInfo = await getNotionPage(response.id, accessToken)
+      // console.log('Page Info:', pageInfo)
       await updateNotionPage(response.id, accessToken, notionDetails)
       return response
     }

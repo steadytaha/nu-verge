@@ -6,23 +6,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getPropertiesFromDatabase(response: any) {
-  if (response?.properties) {
-    const properties = response.properties;
-    const propertiesArray = Object.entries(properties)
-      .map(([key, value]: any) => {
-        const select = value.select;
-        // if the type checkbox move it to the end
-        if (select?.options || value.type === "checkbox") {
-          return {
-            key,
-            options: select?.options || null,
-            type: value.type,
-          };
-        }
-        return null;
-      })
-      .filter((item) => item !== null);
-
-    return propertiesArray;
+  if (!response?.properties) {
+    return [];
   }
+
+  return Object.entries(response.properties)
+    .map(([key, value]: [string, any]) => {
+      if (value.type === "checkbox" || value.select?.options) {
+        return {
+          key,
+          options: value.select?.options || null,
+          type: value.type,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean) // Remove null values
+    .sort((a, b) => (a?.type === "checkbox" ? 1 : -1));
 }
