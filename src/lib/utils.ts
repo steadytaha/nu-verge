@@ -11,6 +11,7 @@ export function getPropertiesFromDatabase(response: any) {
     const propertiesArray = Object.entries(properties)
       .map(([key, value]: any) => {
         const select = value.select;
+        // if the type checkbox move it to the end
         if (select?.options || value.type === "checkbox") {
           return {
             key,
@@ -22,7 +23,6 @@ export function getPropertiesFromDatabase(response: any) {
       })
       .filter((item) => item !== null);
 
-    
     return propertiesArray;
   }
 }

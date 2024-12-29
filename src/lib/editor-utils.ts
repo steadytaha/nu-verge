@@ -136,9 +136,9 @@ export const onConnections = async (
         workspaceName: connection.workspaceName,
         content: notionValue,
       });
-      getNotionDatabase(connection.databaseId, connection.accessToken).then(
-        (response) => {}
-      );
+      // getNotionDatabase(connection.databaseId, connection.accessToken).then(
+      //   (response) => {}
+      // );
 
       if (nodeConnection.notionNode.databaseId !== "") {
         const response = await getNotionDatabase(
@@ -179,4 +179,14 @@ export const fetchBotSlackChannels = async (
   setSlackChannels: (slackChannels: Option[]) => void
 ) => {
   await listBotChannels(token)?.then((channels) => setSlackChannels(channels));
+};
+export const fetchNotionProperties = async (
+  databaseId: string,
+  accessToken: string
+) => {
+  const { setNotionProperties } = useAutoStore.getState();
+  const response = await getNotionDatabase(databaseId, accessToken);
+  if (response) {
+    setNotionProperties(getPropertiesFromDatabase(response.metadata));
+  }
 };

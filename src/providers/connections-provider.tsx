@@ -43,11 +43,7 @@ export type ConnectionProviderProps = {
   >
   isLoading: boolean
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
-  notionDetails: {
-    class?: string
-    type?: string
-    reviewed?: boolean
-  },
+  notionDetails: any,
   setNotionDetails: React.Dispatch<
   React.SetStateAction<{
     class?: string
@@ -90,11 +86,7 @@ const InitialValues: ConnectionProviderProps = {
     teamName: '',
     content: '',
   },
-  notionDetails: {
-    class: '',
-    type: '',
-    reviewed: false,
-  },
+  notionDetails: null,
   isLoading: false,
   setGoogleNode: () => undefined,
   setDiscordNode: () => undefined,

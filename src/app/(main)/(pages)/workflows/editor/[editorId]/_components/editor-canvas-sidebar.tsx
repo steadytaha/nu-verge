@@ -15,6 +15,7 @@ import {
 import EditorCanvasIconHelper from "./editor-canvas-card-icon-helper";
 import {
   fetchBotSlackChannels,
+  fetchNotionProperties,
   onConnections,
   onDragStart,
 } from "@/lib/editor-utils";
@@ -27,6 +28,8 @@ import {
 import RenderConnectionAccordion from "./render-connections-accordion";
 import RenderOutputAccordion from "./render-output-accordion";
 import { useAutoStore } from "@/store";
+import { getPropertiesFromDatabase } from "@/lib/utils";
+import { getNotionDatabase } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
 
 type Props = {
   nodes: EditorNodeType[];
@@ -48,6 +51,12 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
       fetchBotSlackChannels(
         nodeConnection.slackNode.slackAccessToken,
         setSlackChannels
+      );
+    }
+    if (nodeConnection.notionNode.accessToken) {
+      fetchNotionProperties(
+        nodeConnection.notionNode.databaseId,
+        nodeConnection.notionNode.accessToken
       );
     }
   }, [nodeConnection]);

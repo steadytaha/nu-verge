@@ -167,7 +167,7 @@ const ContentBasedOnTitle = ({
             />
           )}
 
-          {title === "Notion" && notionProperties.length > 0? (
+          {title === "Notion" && notionProperties.length > 0 ? (
             <NotionPropertiesSelector
               nodeConnection={nodeConnection}
               onPropertyChange={(property, value) => {
@@ -180,7 +180,12 @@ const ContentBasedOnTitle = ({
                 }));
               }}
             />
-          ):('Loading...')}
+          ) : title === "Notion" && notionProperties.length === 0 ? (
+            <span>
+              Loading properties... <br /> <br /> Add properties to your Notion
+              database to use them here if you haven't already
+            </span>
+          ) : null}
 
           {isLoading && (
             <p className="text-sm text-muted-foreground">Loading files...</p>
