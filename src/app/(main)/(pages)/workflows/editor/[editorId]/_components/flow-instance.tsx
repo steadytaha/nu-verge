@@ -10,9 +10,10 @@ type Props = {
     children: React.ReactNode
     edges: any[]
     nodes: any[]
+    startWorkflow: () => void
 }
 
-const FlowInstance = ({ children, edges, nodes }: Props) => {
+const FlowInstance = ({ children, edges, nodes, startWorkflow }: Props) => {
     const pathname = usePathname()
     const { toast } = useToast()
     const [isFlow, setIsFlow] = useState([])
@@ -70,6 +71,11 @@ useEffect(() => {
                 disabled={isFlow.length < 1}
             >
                 Publish
+            </Button>
+            <Button
+                onClick={startWorkflow}
+            >
+                Start
             </Button>
         </div>
         {children}

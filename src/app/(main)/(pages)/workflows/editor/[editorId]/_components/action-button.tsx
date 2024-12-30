@@ -4,11 +4,10 @@ import { toast } from "@/hooks/use-toast";
 import { ConnectionProviderProps } from "@/providers/connections-provider";
 import { Option, useAutoStore } from "@/store";
 import { usePathname } from "next/navigation";
-import React, { use, useCallback } from "react";
+import React, { useCallback } from "react";
 import { onCreateNodeTemplate } from "../../../_actions/workflow-connections";
-import { onCreateNewPageInDatabase } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
-import { postMessageToSlack } from "@/app/(main)/(pages)/connections/_actions/slack-connection";
-import { set } from "zod";
+import { onStoreNotionContent, onStoreSlackContent } from "@/lib/action-handlers";
+
 type Props = {
   currentService: string;
   nodeConnection: ConnectionProviderProps;
@@ -84,50 +83,15 @@ const ActionButton = ({
     }
   }, [nodeConnection, channels]);
 
-  const onStoreNotionContent = useCallback(async () => {
-    const { setNotionValue, setNotionDetails } = useAutoStore.getState();
-    const response = await onCreateNewPageInDatabase(
-      nodeConnection.notionNode.databaseId,
-      nodeConnection.notionNode.accessToken,
-      nodeConnection.notionNode.content,
-      nodeConnection.notionDetails
-    );
-    if (response) {
-      nodeConnection.setNotionNode((prev: any) => ({
-        ...prev,
-        content: "",
-      }));
-      setNotionValue("");
-      setNotionDetails({
-        class: "",
-        type: "",
-        reviewed: false,
-      });
-    }
-  }, [nodeConnection.notionNode]);
+  const handleNotionAction = useCallback(async () => {
+    await onStoreNotionContent(nodeConnection);
+  }, [nodeConnection]);
 
-  const onStoreSlackContent = useCallback(async () => {
-    const response = await postMessageToSlack(
-      nodeConnection.slackNode.slackAccessToken,
-      channels!,
-      nodeConnection.slackNode.content
-    );
-    if (response.message == "Success") {
-      toast({
-        description: "Message sent successfully!",
-      });
-      nodeConnection.setSlackNode((prev: any) => ({
-        ...prev,
-        content: "",
-      }));
-      setChannels!([]);
-    } else {
-      toast({
-        variant: "destructive",
-        description: response.message,
-      });
+  const handleSlackAction = useCallback(async () => {
+    if (channels && setChannels) {
+      await onStoreSlackContent(nodeConnection, channels, setChannels);
     }
-  }, [nodeConnection.slackNode, channels]);
+  }, [nodeConnection, channels, setChannels]);
 
   const renderActionButton = () => {
     switch (currentService) {
@@ -146,7 +110,7 @@ const ActionButton = ({
       case "Notion":
         return (
           <>
-            <Button variant="outline" onClick={onStoreNotionContent}>
+            <Button variant="outline" onClick={handleNotionAction}>
               Test Message
             </Button>
             <Button onClick={onCreateLocalNodeTemplate} variant="outline">
@@ -158,7 +122,7 @@ const ActionButton = ({
       case "Slack":
         return (
           <>
-            <Button variant="outline" onClick={onStoreSlackContent}>
+            <Button variant="outline" onClick={handleSlackAction}>
               Test Message
             </Button>
             <Button onClick={onCreateLocalNodeTemplate} variant="outline">

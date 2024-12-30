@@ -18,6 +18,7 @@ import FlowInstance from './flow-instance'
 import EditorCanvasSidebar from './editor-canvas-sidebar'
 import { onGetNodesEdges } from '../../../_actions/workflow-connections'
 import { useAutoStore } from '@/store'
+import { onStoreNotionContent, onStoreSlackContent } from '@/lib/action-handlers'
   
 
 type Props = {}
@@ -100,6 +101,12 @@ const EditorCanvas = (props: Props) => {
             default:
                 return {}
         }
+    }
+
+    const startWorkflow = async () => {
+        const filteredNodes = nodes.filter((node) => node.type !== 'Trigger')
+        console.log(filteredNodes)
+        
     }
 
     const onDrop = useCallback(
@@ -276,6 +283,7 @@ const EditorCanvas = (props: Props) => {
                     <FlowInstance
                         edges={edges}
                         nodes={nodes}
+                        startWorkflow={startWorkflow}
                     >
                         <EditorCanvasSidebar nodes={nodes} />
                     </FlowInstance>
