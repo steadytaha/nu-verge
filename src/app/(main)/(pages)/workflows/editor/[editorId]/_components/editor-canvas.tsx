@@ -17,6 +17,7 @@ import { v4 } from 'uuid'
 import FlowInstance from './flow-instance'
 import EditorCanvasSidebar from './editor-canvas-sidebar'
 import { onGetNodesEdges } from '../../../_actions/workflow-connections'
+import { useAutoStore } from '@/store'
   
 
 type Props = {}
@@ -33,6 +34,7 @@ const EditorCanvas = (props: Props) => {
     const { toast } = useToast()
     const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance>()
     const pathname = usePathname()
+    const { notionValue, notionDetails, selectedSlackChannels, slackMessage } = useAutoStore()
 
     const onDragOver = useCallback((event: any) => {
         event.preventDefault()
@@ -79,6 +81,27 @@ const EditorCanvas = (props: Props) => {
         dispatch({ type: 'LOAD_DATA', payload: { edges, elements: nodes } })
     }, [nodes, edges])
 
+    const handleMetadata = (type: EditorCanvasCardType['type']) => {
+        console.log('ÇALIŞTI')
+        console.log(type)
+        switch (type) {
+            case 'Notion':
+                return {
+                    value: notionValue,
+                    class: notionDetails.class,
+                    type: notionDetails.type,
+                    reviewed: notionDetails.reviewed,
+                }
+            case 'Slack':
+                return {
+                    selectedChannels: selectedSlackChannels,
+                    message: slackMessage,
+                }
+            default:
+                return {}
+        }
+    }
+
     const onDrop = useCallback(
         (event: any) => {
             event.preventDefault()
@@ -118,7 +141,7 @@ const EditorCanvas = (props: Props) => {
                     description: EditorCanvasDefaultCardTypes[type].description,
                     completed: false,
                     current: false,
-                    metadata: {},
+                    metadata: handleMetadata(type),
                     type: type,
                 },
             }
