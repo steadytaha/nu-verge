@@ -39,6 +39,7 @@ type AutoStore = {
   setNotionValue: (notionValue: string) => void;
   notionProperties: NotionProperty[];
   setNotionProperties: (notionProperties: any) => void;
+  resetStore: () => void;
 };
 
 export const useAutoStore = create<AutoStore>()((set) => ({
@@ -54,8 +55,9 @@ export const useAutoStore = create<AutoStore>()((set) => ({
   slackChannels: [],
   setSlackChannels: (slackChannels: Option[]) => set({ slackChannels }),
   selectedSlackChannels: [],
-  setSelectedSlackChannels: (selectedSlackChannels: Option[]) =>
-    set({ selectedSlackChannels }),
+  setSelectedSlackChannels: (selectedSlackChannels: Option[]) => {
+    set({ selectedSlackChannels });
+  },
   slackMessage: "",
   setSlackMessage: (slackMessage: string) => set({ slackMessage }),
   notionDetails: {
@@ -74,4 +76,23 @@ export const useAutoStore = create<AutoStore>()((set) => ({
 
   setNotionProperties: (notionProperties: NotionProperty[]) =>
     set({ notionProperties }),
+
+  resetStore: () =>
+    set({
+      selectedGoogleDriveFile: null,
+      googleDriveFiles: [],
+      googleFile: {},
+      slackChannels: [],
+      selectedSlackChannels: [],
+      slackMessage: "",
+      notionDetails: {
+        class: "",
+        type: "",
+        reviewed: false,
+      },
+      notionValue: "",
+      notionProperties: [],
+    }),
 }));
+// nodeun verileri bossa ve eski storeu kullaniyor?
+// slack channel calismiytor
