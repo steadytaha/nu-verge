@@ -113,17 +113,17 @@ export const onConnections = async (
   editorState: EditorState,
   googleFile: any
 ) => {
-  if (editorState.editor.selectedNode.data.title == "Discord") {
-    const connection = await getDiscordConnectionUrl();
-    if (connection) {
-      nodeConnection.setDiscordNode({
-        webhookURL: connection.url,
-        content: "",
-        webhookName: connection.name,
-        guildName: connection.guildName,
-      });
-    }
-  }
+  // if (editorState.editor.selectedNode.data.title == "Discord") {
+  //   const connection = await getDiscordConnectionUrl();
+  //   if (connection) {
+  //     nodeConnection.setDiscordNode({
+  //       webhookURL: connection.url,
+  //       content: "",
+  //       webhookName: connection.name,
+  //       guildName: connection.guildName,
+  //     });
+  //   }
+  // }
   if (editorState.editor.selectedNode.data.title == "Notion") {
     const connection = await getNotionConnection();
 

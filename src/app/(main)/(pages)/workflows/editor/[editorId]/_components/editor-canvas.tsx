@@ -35,6 +35,7 @@ import {
   onStoreNotionContent,
   onStoreSlackContent,
 } from "@/lib/action-handlers";
+import { useNodeConnections } from "@/providers/connections-provider";
 
 type Props = {};
 
@@ -48,13 +49,14 @@ const EditorCanvas = (props: Props) => {
   const [edges, setEdges] = useState(initialEdges);
   const [isWorkFlowLoading, setWorkFlowLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  const { nodeConnection } = useNodeConnections();
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance>();
   const pathname = usePathname();
   const {
     notionValue,
     notionDetails,
-
+    selectedSlackChannels,
     slackMessage,
     setNotionDetails,
     setNotionValue,
@@ -115,6 +117,55 @@ const EditorCanvas = (props: Props) => {
 
   const startWorkflow = async () => {
     const filteredNodes = nodes.filter((node) => node.type !== "Trigger");
+    
+    try {
+      for (const node of filteredNodes) {
+        if (node.type === "Slack") {
+          const response = await onStoreSlackContent(
+            nodeConnection,
+            selectedSlackChannels,
+            setSelectedSlackChannels
+          );
+        
+          
+          if (response.message !== "Success") {
+            toast({
+              variant: "destructive",
+              title: "Uh oh! Something went wrong.",
+              description: "Failed to process Slack node"
+            });
+            return; // Exit the function early
+          }
+        }
+        
+        if (node.type === "Notion") {
+          nodeConnection.notionDetails = notionDetails;
+          const response = await onStoreNotionContent(nodeConnection);
+      
+          if (!response) {
+            toast({
+              variant: "destructive",
+              title: "Uh oh! Something went wrong.",
+              description: "Failed to process Notion node"
+            });
+            return; // Exit the function early
+          }
+        }
+      }
+      
+      // If we get here, all operations succeeded
+      toast({
+        title: "Success",
+        description: "Workflow executed successfully"
+      });
+      
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
+    }
   };
 
   const updateNodes = () => {

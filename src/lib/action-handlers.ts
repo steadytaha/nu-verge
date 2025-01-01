@@ -15,18 +15,18 @@ export const onStoreNotionContent = async (
     nodeConnection.notionNode.content, //EŞLEŞTİR   
     nodeConnection.notionDetails
   );
-  if (response) {
-    nodeConnection.setNotionNode((prev: any) => ({
-      ...prev,
-      content: "",
-    }));
-    setNotionValue("");
-    setNotionDetails({
-      class: "",
-      type: "",
-      reviewed: false,
-    });
-  }
+  // if (response) {
+  //   nodeConnection.setNotionNode((prev: any) => ({
+  //     ...prev,
+  //     content: "",
+  //   }));
+  //   setNotionValue("");
+  //   setNotionDetails({
+  //     class: "",
+  //     type: "",
+  //     reviewed: false,
+  //   });
+  // }
   return response;
 };
 
@@ -44,11 +44,11 @@ export const onStoreSlackContent = async (
     toast({
       description: "Message sent successfully!",
     });
-    nodeConnection.setSlackNode((prev: any) => ({
-      ...prev,
-      content: "",
-    }));
-    setChannels([]);
+    // nodeConnection.setSlackNode((prev: any) => ({
+    //   ...prev,
+    //   content: "",
+    // }));
+    // setChannels([]);
   } else {
     toast({
       variant: "destructive",
