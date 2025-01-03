@@ -179,4 +179,12 @@ export const CONNECTIONS: Connection[] = [
     accessTokenKey: 'slackAccessToken',
     slackSpecial: true,
   },
+  {
+    title: 'OpenAI',
+    description: 'Use OpenAI to generate responses.',
+    image: '/openai.png',
+    connectionKey: 'openaiNode',
+    accessTokenKey: 'apiKey',
+    alwaysTrue: true,
+  },
 ]

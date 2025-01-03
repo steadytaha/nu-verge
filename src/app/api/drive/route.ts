@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import axios from 'axios';
 import { google } from 'googleapis';
+import { Readable } from 'stream'
 import { NextResponse } from 'next/server';
 
 async function getGoogleAccessToken() {
@@ -60,6 +61,56 @@ async function getGoogleAccessToken() {
   }
 }
 
+export async function getPDFBufferFromGoogleDrive(fileId: string): Promise<Buffer> {
+  try {
+    const accessToken = await getGoogleAccessToken();
+    console.log("Access Token received:", accessToken ? "✅ Success" : "❌ Failed");
+    
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.OAUTH2_REDIRECT_URI
+    );
+    console.log("OAuth2 Client created:", !!oauth2Client ? "✅ Success" : "❌ Failed");
+
+    oauth2Client.setCredentials({
+      access_token: accessToken,
+    });
+    console.log("Credentials set successfully");
+    const drive = google.drive({ version: 'v3', auth: oauth2Client })
+    
+    const file = await drive.files.get({
+      fileId: fileId,
+      fields: 'mimeType, name',
+    })
+
+    if (file.data.mimeType !== 'application/pdf') {
+      throw new Error('The specified file is not a PDF')
+    }
+    
+    const response = await drive.files.get(
+      {
+        fileId: fileId,
+        alt: 'media',
+      },
+      { responseType: 'stream' }
+    )
+
+    // Convert stream to buffer
+    const buffers: Buffer[] = []
+    const stream = response.data as unknown as Readable
+
+    return new Promise((resolve, reject) => {
+      stream.on('data', (chunk) => buffers.push(Buffer.from(chunk)))
+      stream.on('end', () => resolve(Buffer.concat(buffers)))
+      stream.on('error', (error) => reject(error))
+    })
+  } catch (error) {
+    console.error('Error fetching PDF from Google Drive:', error)
+    throw error
+  }
+}
+
 export async function GET() {
   try {
     console.log("=== START: Drive API Request ===");
@@ -100,6 +151,15 @@ export async function GET() {
       pageSize: 10,
       fields: 'files(id, name, mimeType, createdTime)',
     });
+
+    const file = await drive.files.get(
+      {
+        fileId: '1DDAThpH4KiRGe48mC_vyzVcbMI-8tF5Z',
+        alt: 'media',
+      },
+      { responseType: 'stream' }
+    );
+    console.log("File received:", !!file ? "✅ Success" : "❌ Failed");
 
     console.log("Response received:", !!response ? "✅ Success" : "❌ Failed");
     console.log("Number of files found:", response.data.files?.length || 0);
