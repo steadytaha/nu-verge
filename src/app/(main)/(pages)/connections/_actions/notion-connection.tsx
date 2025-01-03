@@ -2,6 +2,12 @@
 import { db } from '@/lib/db'
 import { currentUser } from '@clerk/nextjs/server'
 import { Client } from '@notionhq/client'
+import OpenAI from 'openai'
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
+import fs from 'fs/promises'
+import { getPDFBufferFromGoogleDrive } from '@/app/api/drive/route'
+
+const client = new OpenAI()
 
 export const onNotionConnect = async (
   access_token: string,
@@ -101,6 +107,18 @@ export const onCreateNewPageInDatabase = async (
       // const pageInfo = await getNotionPage(response.id, accessToken)
       // console.log('Page Info:', pageInfo)
       await updateNotionPage(response.id, accessToken, notionDetails)
+      // const pdfBuffer = await getPDFBufferFromFile('../DeploymentandMaintenance.pdf')
+      const pdfBuffer = await getPDFBufferFromGoogleDrive('1DDAThpH4KiRGe48mC_vyzVcbMI-8tF5Z')
+      const gptResponse = await chatGPTWithPDF(
+        pdfBuffer,
+        "Explain Canary development.",
+        {
+          maxContextLength: 1000,
+          model: "gpt-4o-mini",
+          temperature: 0.5,
+        }
+      )
+      console.log('GPT Response:', gptResponse)
       return response
     }
   } catch (error) {
@@ -189,6 +207,81 @@ export const getNotionDatabase = async (databaseId: string, accessToken: string)
     }
   } catch (error) {
     console.error('Error retrieving Notion database:', error)
+    throw error
+  }
+}
+
+async function getPDFBufferFromFile(filePath: string): Promise<Buffer> {
+  try {
+    const buffer = await fs.readFile(filePath)
+    return buffer
+  } catch (error) {
+    console.error('Error reading PDF file:', error)
+    throw error
+  }
+}
+
+async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
+  try {
+    const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+    const loader = new PDFLoader(blob)
+    const docs = await loader.load()
+    return docs.map(doc => doc.pageContent).join('\n')
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error)
+    throw error
+  }
+}
+
+function createContextAwarePrompt(userQuestion: string, pdfContext: string): string {
+  return `Context from PDF:
+  ${pdfContext}
+
+  Based on the above context, please answer this question:
+  ${userQuestion}`
+}
+
+export async function chatGPTWithPDF(
+  pdfBuffer: Buffer,
+  userQuestion: string,
+  options: {
+    maxContextLength?: number;
+    model?: string;
+    temperature?: number;
+  } = {}
+) {
+  try {
+    const pdfText = await extractTextFromPDF(pdfBuffer)
+    const maxContextLength = options.maxContextLength || 2000
+    const truncatedContext = pdfText.slice(0, maxContextLength)
+    const contextualPrompt = createContextAwarePrompt(userQuestion, truncatedContext)
+    
+    const stream = await client.chat.completions.create({
+      model: options.model || 'gpt-4o-mini',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a helpful assistant that answers questions based on the provided PDF context. If the answer cannot be found in the context, say so.'
+        },
+        { 
+          role: 'user', 
+          content: contextualPrompt 
+        }
+      ],
+      temperature: options.temperature || 0.7,
+      stream: true,
+    })
+
+    let fullResponse = ''
+    for await (const part of stream) {
+      const content = part.choices[0]?.delta?.content || ''
+      fullResponse += content
+      process.stdout.write(content)
+    }
+
+    return fullResponse
+  } catch (error) {
+    console.error('Error in chatGPTWithPDF:', error)
     throw error
   }
 }

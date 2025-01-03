@@ -38,7 +38,7 @@ type Props = {
 const EditorCanvasSidebar = ({ nodes }: Props) => {
   const { state } = useEditor();
   const { nodeConnection } = useNodeConnections();
-  const { googleFile, setSlackChannels } = useAutoStore();
+  const { googleFile, setSlackChannels, slackChannels } = useAutoStore();
 
   useEffect(() => {
     if (state) {
@@ -47,19 +47,29 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
   }, [state]);
 
   useEffect(() => {
-    if (nodeConnection.slackNode.slackAccessToken) {
+    if (nodeConnection.slackNode.slackAccessToken && slackChannels.length === 0) {
       fetchBotSlackChannels(
         nodeConnection.slackNode.slackAccessToken,
         setSlackChannels
       );
     }
+    // if (nodeConnection.notionNode.accessToken) {
+    //   fetchNotionProperties(
+    //     nodeConnection.notionNode.databaseId,
+    //     nodeConnection.notionNode.accessToken
+    //   );
+    // }
+  }, [nodeConnection.slackNode.slackAccessToken]);
+
+  useEffect(() => {
     if (nodeConnection.notionNode.accessToken) {
-      fetchNotionProperties(
-        nodeConnection.notionNode.databaseId,
-        nodeConnection.notionNode.accessToken
-      );
-    }
-  }, [nodeConnection]);
+        fetchNotionProperties(
+          nodeConnection.notionNode.databaseId,
+          nodeConnection.notionNode.accessToken
+        );
+        console.log('fetch notion properties')
+      }
+    }, [nodeConnection.notionNode.accessToken])
 
   return (
     <aside>

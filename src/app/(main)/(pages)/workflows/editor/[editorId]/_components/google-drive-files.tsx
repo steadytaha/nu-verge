@@ -92,6 +92,7 @@ const GoogleDriveFiles = ({}: Props) => {
     const file = files.find((file) => file.id === id);
     if (!file) return;
     globalStore.setSelectedGoogleDriveFile(file);
+    console.log("Selected file:", file);
   };
 
   useEffect(() => {
