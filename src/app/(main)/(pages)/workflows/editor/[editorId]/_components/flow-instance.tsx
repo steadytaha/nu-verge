@@ -78,7 +78,7 @@ const FlowInstance = ({
         <Button onClick={onPublishWorkflow} disabled={isFlow.length < 1}>
           Publish
         </Button>
-        <Button onClick={startWorkflow}>Start</Button>
+        <Button onClick={startWorkflow} disabled={isFlow.length < 1}>Start</Button>
       </div>
       {children}
     </div>

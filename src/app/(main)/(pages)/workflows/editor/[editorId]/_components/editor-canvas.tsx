@@ -36,7 +36,9 @@ import {
   onStoreSlackContent,
 } from "@/lib/action-handlers";
 import { useNodeConnections } from "@/providers/connections-provider";
-
+import axios from "axios";
+import { getUserId } from "@/app/(main)/(pages)/connections/_actions/get-user";
+import { useBilling } from "@/providers/billing-provider";
 type Props = {};
 
 const initialNodes: EditorNodeType[] = [];
@@ -63,7 +65,7 @@ const EditorCanvas = (props: Props) => {
     setSelectedSlackChannels,
     setSlackMessage,
   } = useAutoStore();
-
+  const { credits, setCredits } = useBilling();
   const onDragOver = useCallback((event: any) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -117,57 +119,85 @@ const EditorCanvas = (props: Props) => {
 
   const startWorkflow = async () => {
     const filteredNodes = nodes.filter((node) => node.type !== "Trigger");
-    
-    try {
-      for (const node of filteredNodes) {
-        if (node.type === "Slack") {
-          const response = await onStoreSlackContent(
-            nodeConnection,
-            selectedSlackChannels,
-            setSelectedSlackChannels
-          );
-        
-          
-          if (response.message !== "Success") {
-            toast({
-              variant: "destructive",
-              title: "Uh oh! Something went wrong.",
-              description: "Failed to process Slack node"
-            });
-            return; // Exit the function early
+    if (Number(credits) > 0 || credits === "Unlimited") {
+      try {
+        for (const node of filteredNodes) {
+          if (node.type === "Slack") {
+            const response = await onStoreSlackContent(
+              nodeConnection,
+              selectedSlackChannels,
+              setSelectedSlackChannels
+            );
+
+            if (response.message !== "Success") {
+              toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: "Failed to process Slack node",
+              });
+              return; // Exit the function early
+            }
+          }
+
+          if (node.type === "Notion") {
+            nodeConnection.notionDetails = notionDetails;
+            const response = await onStoreNotionContent(nodeConnection);
+
+            if (!response) {
+              toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: "Failed to process Notion node",
+              });
+              return; // Exit the function early
+            }
           }
         }
-        
-        if (node.type === "Notion") {
-          nodeConnection.notionDetails = notionDetails;
-          const response = await onStoreNotionContent(nodeConnection);
-      
-          if (!response) {
-            toast({
-              variant: "destructive",
-              title: "Uh oh! Something went wrong.",
-              description: "Failed to process Notion node"
-            });
-            return; // Exit the function early
-          }
-        }
+        chargeCredit();
+        // If we get here, all operations succeeded
+        toast({
+          title: "Success",
+          description: "Workflow executed successfully",
+        });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
+        });
       }
-      
-      // If we get here, all operations succeeded
-      toast({
-        title: "Success",
-        description: "Workflow executed successfully"
-      });
-      
-    } catch (error) {
+    } else {
       toast({
         variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error instanceof Error ? error.message : "An unexpected error occurred"
+        title: "Not enough credits",
+        description: "You need to have at least 1 credit to run the workflow",
       });
     }
   };
 
+  const chargeCredit = async () => {
+    const userId = await getUserId();
+
+    try {
+      const response = await axios.post(
+        "https://localhost:3000/api/drive-activity/notification",
+        null,
+        {
+          headers: {
+            "user-id": userId,
+          },
+        }
+      );
+      console.log(response.data); // Logs the response from the server
+    } catch (error: any) {
+      console.error("Error:", error.response?.data || error.message); // Logs any errors
+    } finally {
+      setCredits((prevCredits) => (Number(prevCredits) - 1).toString());
+    }
+  };
   const updateNodes = () => {
     const updatedNodes = nodes.map((node) => {
       const updatedNode = { ...node }; // Create a copy of the node
@@ -255,6 +285,7 @@ const EditorCanvas = (props: Props) => {
 
       //@ts-ignore
       setNodes((nds) => nds.concat(newNode));
+      console.log("New node added", newNode);
     },
     [state, reactFlowInstance]
   );
