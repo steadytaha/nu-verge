@@ -49,8 +49,13 @@ export type ConnectionProviderProps = {
     class?: string
     type?: string
     reviewed?: boolean
-  }>
->
+    }>
+  >
+  openaiNode: {
+    input: string,
+    content: string,
+  }
+  setOpenaiNode: React.Dispatch<React.SetStateAction<any>>
 }
 
 type ConnectionWithChildProps = {
@@ -88,10 +93,15 @@ const InitialValues: ConnectionProviderProps = {
   },
   notionDetails: null,
   isLoading: false,
+  openaiNode: {
+    input: '',
+    content: '',
+  },
   setGoogleNode: () => undefined,
   setDiscordNode: () => undefined,
   setNotionNode: () => undefined,
   setSlackNode: () => undefined,
+  setOpenaiNode: () => undefined,
   setIsLoading: () => undefined,
   setWorkFlowTemplate: () => undefined,
   setNotionDetails: () => undefined,
@@ -107,6 +117,7 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
   const [slackNode, setSlackNode] = useState(InitialValues.slackNode)
   const [isLoading, setIsLoading] = useState(InitialValues.isLoading)
   const [notionDetails, setNotionDetails] = useState(InitialValues.notionDetails)
+  const [openaiNode, setOpenaiNode] = useState(InitialValues.openaiNode)
   const [workflowTemplate, setWorkFlowTemplate] = useState(
     InitialValues.workflowTemplate
   )
@@ -126,6 +137,8 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
     setWorkFlowTemplate,
     notionDetails,
     setNotionDetails,
+    openaiNode,
+    setOpenaiNode,
   }
 
   return <Provider value={values}>{children}</Provider>

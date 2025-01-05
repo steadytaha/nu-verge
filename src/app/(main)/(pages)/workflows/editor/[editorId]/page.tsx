@@ -16,6 +16,7 @@ const Page = (props: Props) => {
   useEffect(() => {
     // Reset the store whenever the path changes
     resetStore();
+    console.log("Resetting store");
   }, [pathname, resetStore]);
   return (
     <div className="h-full">

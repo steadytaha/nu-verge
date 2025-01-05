@@ -20,6 +20,11 @@ import { toast } from "@/hooks/use-toast";
 import NotionPropertiesSelector from "./notion-properties-selector";
 import { useAutoStore } from "@/store";
 import { Loader2 } from "lucide-react";
+import MultipleSelector from "@/components/ui/multiple-selector";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { chatGPTWithPDF } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 
 export interface Option {
   value: string;
@@ -55,7 +60,7 @@ const ContentBasedOnTitle = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { setSlackMessage, setNotionValue, notionProperties } = useAutoStore();
+  const { setSlackMessage, setNotionValue, notionProperties, selectedGoogleDriveFile, openai, setOpenai } = useAutoStore();
 
   // useEffect(() => {
   //   const fetchGoogleDriveFiles = async () => {
@@ -116,7 +121,7 @@ const ContentBasedOnTitle = ({
   if (!nodeConnectionType) return <p>Not connected</p>;
 
   const isConnected =
-    title === "Google Drive"
+    title === "Google Drive" || title === "AI"
       ? !nodeConnection.isLoading
       : !!nodeConnectionType[
           `${
@@ -131,6 +136,12 @@ const ContentBasedOnTitle = ({
         ];
 
   if (!isConnected) return <p>Not connected</p>;
+
+  const handleChatGPT = async () => {
+    const response = await chatGPTWithPDF(openai.input, {id: selectedGoogleDriveFile?.id});
+    setOpenai({ ...openai, output: response });
+    console.log(response);
+  }
 
   return (
     <AccordionContent>
@@ -150,7 +161,38 @@ const ContentBasedOnTitle = ({
                 : ""}
           </p>
 
-          {title !== "Google Drive" && (
+          {title === "AI" && (
+            <div className="space-y-4">
+              {selectedGoogleDriveFile && 
+                <span>Selected File: {selectedGoogleDriveFile?.name}</span>
+              }
+              <div className="flex flex-col w-full gap-2">
+                <Label htmlFor="message">Your message</Label>
+                <Textarea
+                  onChange={(e) => setOpenai({ ...openai, input: e.target.value })}
+                  placeholder="Enter your message here"
+                  value={openai.input}
+                  id="message"
+                />
+                <Button onClick={handleChatGPT} className="mb-4">Send message</Button>
+                <Label htmlFor="output">Repsonse</Label>
+                <Textarea 
+                  placeholder="Your response"
+                  value={openai.output}
+                  disabled
+                />
+              </div>  
+              {/* <MultipleSelector
+                options={[]} 
+                disabled={true}
+                value={selectedGoogleDriveFile?.name}
+              >
+
+              </MultipleSelector> */}
+            </div>
+          )}
+
+          {title !== "Google Drive" && title !== "AI" && (
             <Input
               type="text"
               value={nodeConnectionType.content}

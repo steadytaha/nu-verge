@@ -39,6 +39,8 @@ import { useNodeConnections } from "@/providers/connections-provider";
 import axios from "axios";
 import { getUserId } from "@/app/(main)/(pages)/connections/_actions/get-user";
 import { useBilling } from "@/providers/billing-provider";
+import { chatGPTWithPDF } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
+import { addContextToNotionPage } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
 type Props = {};
 
 const initialNodes: EditorNodeType[] = [];
@@ -60,10 +62,14 @@ const EditorCanvas = (props: Props) => {
     notionDetails,
     selectedSlackChannels,
     slackMessage,
+    openai,
+    selectedGoogleDriveFile,
     setNotionDetails,
     setNotionValue,
     setSelectedSlackChannels,
     setSlackMessage,
+    setOpenai,
+    setSelectedGoogleDriveFile,
   } = useAutoStore();
   const { credits, setCredits } = useBilling();
   const onDragOver = useCallback((event: any) => {
@@ -118,13 +124,27 @@ const EditorCanvas = (props: Props) => {
   }, [nodes, edges]);
 
   const startWorkflow = async () => {
-    const filteredNodes = nodes.filter((node) => node.type !== "Trigger");
+    const filteredNodes = nodes.filter((node) => node.type !== "Trigger" && node.type !== "Google Drive");
     if (Number(credits) > 0 || credits === "Unlimited") {
+      let lastNode = ''
       try {
         for (const node of filteredNodes) {
           if (node.type === "Slack") {
+            console.log(lastNode)
+            // Create a new nodeConnection object with the updated content
+            const updatedNodeConnection = {
+              ...nodeConnection,
+              slackNode: {
+                ...nodeConnection.slackNode,
+                // Only update content if previous node was AI
+                content: lastNode === "AI" ? openai.output : nodeConnection.slackNode.content
+              }
+            };
+
+            console.log(updatedNodeConnection)
+            
             const response = await onStoreSlackContent(
-              nodeConnection,
+              updatedNodeConnection,
               selectedSlackChannels,
               setSelectedSlackChannels
             );
@@ -143,6 +163,10 @@ const EditorCanvas = (props: Props) => {
             nodeConnection.notionDetails = notionDetails;
             const response = await onStoreNotionContent(nodeConnection);
 
+            if (lastNode === "AI") {
+              await addContextToNotionPage(response?.id, nodeConnection.notionNode.accessToken, openai.output);
+            }
+            
             if (!response) {
               toast({
                 variant: "destructive",
@@ -152,6 +176,13 @@ const EditorCanvas = (props: Props) => {
               return; // Exit the function early
             }
           }
+
+          if (node.type === "AI") {
+            const response = await chatGPTWithPDF(openai.input, {id: selectedGoogleDriveFile?.id});
+            setOpenai({ ...openai, output: response });
+          }
+
+          lastNode = node.type
         }
         chargeCredit();
         // If we get here, all operations succeeded
@@ -201,6 +232,7 @@ const EditorCanvas = (props: Props) => {
   const updateNodes = () => {
     const updatedNodes = nodes.map((node) => {
       const updatedNode = { ...node }; // Create a copy of the node
+      console.log("Updating node:", node);
 
       switch (node.type) {
         case "Notion":
@@ -225,6 +257,27 @@ const EditorCanvas = (props: Props) => {
                 ? [...selectedSlackChannels]
                 : [],
               message: slackMessage,
+            },
+          };
+          break;
+        case "AI":
+          const { openai } = useAutoStore.getState();
+          updatedNode.data = {
+            ...node.data,
+            metadata: {
+              ...node.data.metadata,
+              input: openai.input,
+              output: openai.output,
+            },
+          };
+          break;
+        case 'Google Drive':
+          const { selectedGoogleDriveFile } = useAutoStore.getState();
+          updatedNode.data = {
+            ...node.data,
+            metadata: {
+              ...node.data.metadata,
+              selectedFile: selectedGoogleDriveFile,
             },
           };
           break;
@@ -324,6 +377,15 @@ const EditorCanvas = (props: Props) => {
         if (target.type === "Slack") {
           setSelectedSlackChannels(target.metadata.selectedChannels);
           setSlackMessage(target.metadata.message);
+        }
+        if (target.type === "AI") {
+          setOpenai({
+            input: target.metadata.input,
+            output: target.metadata.output,
+          });
+        }
+        if (target.type === "Google Drive") {
+          setSelectedGoogleDriveFile(target.metadata.selectedFile);
         }
       });
   }

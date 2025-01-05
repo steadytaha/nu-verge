@@ -95,7 +95,6 @@ export async function getPDFBufferFromGoogleDrive(fileId: string): Promise<Buffe
       },
       { responseType: 'stream' }
     )
-
     // Convert stream to buffer
     const buffers: Buffer[] = []
     const stream = response.data as unknown as Readable
@@ -151,15 +150,6 @@ export async function GET() {
       pageSize: 10,
       fields: 'files(id, name, mimeType, createdTime)',
     });
-
-    const file = await drive.files.get(
-      {
-        fileId: '1DDAThpH4KiRGe48mC_vyzVcbMI-8tF5Z',
-        alt: 'media',
-      },
-      { responseType: 'stream' }
-    );
-    console.log("File received:", !!file ? "✅ Success" : "❌ Failed");
 
     console.log("Response received:", !!response ? "✅ Success" : "❌ Failed");
     console.log("Number of files found:", response.data.files?.length || 0);

@@ -39,6 +39,11 @@ type AutoStore = {
   setNotionValue: (notionValue: string) => void;
   notionProperties: NotionProperty[];
   setNotionProperties: (notionProperties: any) => void;
+  openai: {
+    input: string;
+    output: string;
+  };
+  setOpenai: (openai: { input: string; output: string }) => void;
   resetStore: () => void;
 };
 
@@ -77,6 +82,12 @@ export const useAutoStore = create<AutoStore>()((set) => ({
   setNotionProperties: (notionProperties: NotionProperty[]) =>
     set({ notionProperties }),
 
+  openai: {
+    input: "",
+    output: "",
+  },
+  setOpenai: (openai: { input: string; output: string }) => set({ openai }),
+
   resetStore: () =>
     set({
       selectedGoogleDriveFile: null,
@@ -92,6 +103,10 @@ export const useAutoStore = create<AutoStore>()((set) => ({
       },
       notionValue: "",
       notionProperties: [],
+      openai: {
+        input: "",
+        output: "",
+      },
     }),
 }));
 // nodeun verileri bossa ve eski storeu kullaniyor?

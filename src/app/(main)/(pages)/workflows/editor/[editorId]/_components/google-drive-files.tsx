@@ -20,7 +20,7 @@ import { useAutoStore } from "@/store";
 type Props = {};
 
 const GoogleDriveFiles = ({}: Props) => {
-  const globalStore=useAutoStore();
+  const globalStore = useAutoStore();
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();

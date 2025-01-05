@@ -11,7 +11,7 @@ export const WorkflowFormSchema = z.object({
   description: z.string().min(1, "Required"),
 });
 
-export type ConnectionTypes = "Google Drive" | "Notion" | "Slack" | "Discord";
+export type ConnectionTypes = "Google Drive" | "Notion" | "Slack" | "Discord" | "AI";
 
 export type Connection = {
   title: ConnectionTypes;
@@ -89,6 +89,7 @@ export const nodeMapper: Record<string, string> = {
   Slack: "slackNode",
   Discord: "discordNode",
   "Google Drive": "googleNode",
+  AI: "openaiNode",
 };
 export type GoogleDriveFile = {
   id: string;
