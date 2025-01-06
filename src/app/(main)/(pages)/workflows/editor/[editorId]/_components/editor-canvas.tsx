@@ -39,7 +39,7 @@ import { useNodeConnections } from "@/providers/connections-provider";
 import axios from "axios";
 import { getUserId } from "@/app/(main)/(pages)/connections/_actions/get-user";
 import { useBilling } from "@/providers/billing-provider";
-import { chatGPTWithPDF } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
+import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 import { addContextToNotionPage } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
 type Props = {};
 
@@ -125,67 +125,63 @@ const EditorCanvas = (props: Props) => {
 
   const startWorkflow = async () => {
     const filteredNodes = nodes.filter((node) => node.type !== "Trigger" && node.type !== "Google Drive");
+
     if (Number(credits) > 0 || credits === "Unlimited") {
-      let lastNode = ''
       try {
+        let lastNodeOutput = "";
+
         for (const node of filteredNodes) {
-          if (node.type === "Slack") {
-            console.log(lastNode)
-            // Create a new nodeConnection object with the updated content
-            const updatedNodeConnection = {
-              ...nodeConnection,
-              slackNode: {
-                ...nodeConnection.slackNode,
-                // Only update content if previous node was AI
-                content: lastNode === "AI" ? openai.output : nodeConnection.slackNode.content
+          let response;
+
+          switch (node.type) {
+            case "Slack":
+              response = await onStoreSlackContent(
+                {
+                  ...nodeConnection,
+                  slackNode: {
+                    ...nodeConnection.slackNode,
+                    content: lastNodeOutput || nodeConnection.slackNode.content,
+                  },
+                },
+                selectedSlackChannels,
+                setSelectedSlackChannels
+              );
+              break;
+
+            case "Notion":
+              response = await onStoreNotionContent(nodeConnection);
+              if (lastNodeOutput) {
+                await addContextToNotionPage(response?.id, nodeConnection.notionNode.accessToken, lastNodeOutput);
               }
-            };
+              break;
 
-            console.log(updatedNodeConnection)
-            
-            const response = await onStoreSlackContent(
-              updatedNodeConnection,
-              selectedSlackChannels,
-              setSelectedSlackChannels
-            );
+              case "AI":
+                if (!openai.input) {
+                  throw new Error("AI input is required");
+                }
+                const aiResponse = await chatGPT(openai.input, selectedGoogleDriveFile);
+                setOpenai({ ...openai, output: aiResponse });
+                lastNodeOutput = aiResponse;
+                continue;
 
-            if (response.message !== "Success") {
-              toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: "Failed to process Slack node",
-              });
-              return; // Exit the function early
-            }
+            default:
+              break;
           }
 
-          if (node.type === "Notion") {
-            nodeConnection.notionDetails = notionDetails;
-            const response = await onStoreNotionContent(nodeConnection);
-
-            if (lastNode === "AI") {
-              await addContextToNotionPage(response?.id, nodeConnection.notionNode.accessToken, openai.output);
-            }
-            
-            if (!response) {
-              toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: "Failed to process Notion node",
-              });
-              return; // Exit the function early
-            }
+          if (!response || ('message' in response && response.message !== "Success")) {
+            toast({
+              variant: "destructive",
+              title: "Uh oh! Something went wrong.",
+              description: `Failed to process ${node.type} node`,
+            });
+            return; // Exit the function early if there's an error
           }
 
-          if (node.type === "AI") {
-            const response = await chatGPTWithPDF(openai.input, {id: selectedGoogleDriveFile?.id});
-            setOpenai({ ...openai, output: response });
-          }
-
-          lastNode = node.type
+          // Update lastNodeOutput for Slack or Notion if needed
+          lastNodeOutput = node.type === "Slack" || node.type === "Notion" ? openai.output : lastNodeOutput;
         }
+
         chargeCredit();
-        // If we get here, all operations succeeded
         toast({
           title: "Success",
           description: "Workflow executed successfully",
@@ -194,10 +190,7 @@ const EditorCanvas = (props: Props) => {
         toast({
           variant: "destructive",
           title: "Uh oh! Something went wrong.",
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred",
+          description: error instanceof Error ? error.message : "An unexpected error occurred",
         });
       }
     } else {
@@ -214,7 +207,7 @@ const EditorCanvas = (props: Props) => {
 
     try {
       const response = await axios.post(
-        "https://localhost:3000/api/drive-activity/notification",
+        `https://localhost:3000/api/drive-activity/notification`,
         null,
         {
           headers: {
@@ -271,7 +264,7 @@ const EditorCanvas = (props: Props) => {
             },
           };
           break;
-        case 'Google Drive':
+        case "Google Drive":
           const { selectedGoogleDriveFile } = useAutoStore.getState();
           updatedNode.data = {
             ...node.data,

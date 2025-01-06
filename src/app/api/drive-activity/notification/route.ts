@@ -1,155 +1,154 @@
-import { postContentToWebHook } from "@/app/(main)/(pages)/connections/_actions/discord-connection";
-import { onCreateNewPageInDatabase } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
-import { postMessageToSlack } from "@/app/(main)/(pages)/connections/_actions/slack-connection";
 import { db } from "@/lib/db";
-import { useAutoStore } from "@/store";
-import axios from "axios";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
-import { useBilling } from "@/providers/billing-provider";
 
-export async function POST(req: NextRequest) {
-  const headersList = headers();
-  let userId;
-  (await headersList).forEach((value, key) => {
-    if (key == "user-id") {
+// Types
+type UserCredits = string | null;
+interface User {
+  clerkId: string;
+  credits: UserCredits;
+}
+
+// Error classes
+class InvalidUserError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidUserError';
+  }
+}
+
+class InsufficientCreditsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InsufficientCreditsError';
+  }
+}
+
+// Helper functions
+const getUserIdFromHeaders = (headersList: Headers): string | null => {
+  let userId: string | null = null;
+  headersList.forEach((value, key) => {
+    if (key.toLowerCase() === "user-id") {
       userId = value;
     }
   });
-  const user = await db.user.findFirst({
-    where: {
-      clerkId: userId,
-    },
-    select: {
-      clerkId: true,
-      credits: true,
-    },
-  });
-  if ((user && parseInt(user.credits!) > 0) || user?.credits == "Unlimited") {
-    const workflow = await db.workflows.findMany({
-      where: {
-        userId: user.clerkId,
-      },
-    });
-    if (workflow) {
-      workflow.map(async (flow) => {
-        const flowPath = JSON.parse(flow.flowPath!);
-        let current = 0;
-        while (current < flowPath.length) {
-          if (flowPath[current] == "Discord") {
-            const discordMessage = await db.discordWebhook.findFirst({
-              where: {
-                userId: flow.userId,
-              },
-              select: {
-                url: true,
-              },
-            });
-            if (discordMessage) {
-              await postContentToWebHook(
-                flow.discordTemplate!,
-                discordMessage.url
-              );
-              flowPath.splice(flowPath[current], 1);
-            }
-          }
+  return userId;
+};
 
-          if (flowPath[current] == "Slack") {
-            const channels = flow.slackChannels.map((channel) => {
-              return {
-                label: "",
-                value: channel,
-              };
-            });
-            await postMessageToSlack(
-              flow.slackAccessToken!,
-              channels,
-              flow.slackTemplate!
-            );
-            flowPath.splice(flowPath[current], 1);
-          }
+const hasEnoughCredits = (credits: UserCredits): boolean => {
+  if (credits === "Unlimited") return true;
+  if (!credits) return false;
+  const numCredits = parseInt(credits);
+  return !isNaN(numCredits) && numCredits > 0;
+};
 
-          if (flowPath[current] == "Notion") {
-            const { notionDetails } = useAutoStore();
-            await onCreateNewPageInDatabase(
-              flow.notionDbId!,
-              flow.notionAccessToken!,
-              JSON.parse(flow.notionTemplate!),
-              notionDetails
-            );
-            flowPath.splice(flowPath[current], 1);
-          }
+const deductUserCredit = async (user: User): Promise<void> => {
+  // Don't deduct if credits are "Unlimited"
+  if (user.credits === "Unlimited") return;
 
-          if (flowPath[current] == "Wait") {
-            const res = await axios.put(
-              "https://api.cron-job.org/jobs",
-              {
-                job: {
-                  url: `${process.env.NGROK_URI}/cron/wait?flow_id=${flow.id}`,
-                  enabled: "true",
-                  schedule: {
-                    timezone: "Europe/Istanbul",
-                    expiresAt: 0,
-                    hours: [-1],
-                    mdays: [-1],
-                    minutes: ["*****"],
-                    months: [-1],
-                    wdays: [-1],
-                  },
-                },
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${process.env.CRON_JOB_KEY!}`,
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-
-            if (res) {
-              flowPath.splice(flowPath[current], 1);
-              const cronPath = await db.workflows.update({
-                where: {
-                  id: flow.id,
-                },
-                data: {
-                  cronPath: JSON.stringify(flowPath),
-                },
-              });
-              if (cronPath) break;
-            }
-            current++;
-          }
-
-          await db.user.update({
-            where: {
-              clerkId: user.clerkId,
-            },
-            data: {
-              credits: `${parseInt(user.credits!) - 1}`,
-            },
-          });
-         
-        }
-        return Response.json(
-          {
-            message: "Flow completed!",
-          },
-          {
-            status: 200,
-          }
-        );
-        
-      });
-    }
+  // Ensure credits is a valid number
+  const currentCredits = parseInt(user.credits || "0");
+  if (isNaN(currentCredits)) {
+    throw new Error("Invalid credits value");
   }
 
-  return Response.json(
-    {
-      message: "success",
-    },
-    {
-      status: 200,
+  // Perform the update
+  try {
+    await db.user.update({
+      where: {
+        clerkId: user.clerkId,
+      },
+      data: {
+        credits: String(currentCredits - 1)  // Convert back to string for storage
+      },
+    });
+  } catch (error) {
+    console.error('Error updating credits:', error);
+    throw new Error("Failed to update credits");
+  }
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    // Get user ID from headers
+    const headersList = headers();
+    const userId = getUserIdFromHeaders(await headersList);
+
+    if (!userId) {
+      throw new InvalidUserError("User ID not found in headers");
     }
-  );
+
+    // Find user in database
+    const user = await db.user.findFirst({
+      where: {
+        clerkId: userId,
+      },
+      select: {
+        clerkId: true,
+        credits: true,
+      },
+    });
+
+    if (!user) {
+      throw new InvalidUserError("User not found in database");
+    }
+
+    // Check credits
+    if (!hasEnoughCredits(user.credits)) {
+      throw new InsufficientCreditsError("User has insufficient credits");
+    }
+
+    // Deduct credit if not unlimited
+    await deductUserCredit(user);
+
+    // Return success response
+    return Response.json(
+      {
+        message: "Flow completed successfully",
+        status: "success",
+        remainingCredits: user.credits === "Unlimited" ? "Unlimited" : String(parseInt(user.credits!) - 1)
+      },
+      {
+        status: 200,
+      }
+    );
+
+  } catch (error) {
+    console.error('Error processing request:', error);
+
+    if (error instanceof InvalidUserError) {
+      return Response.json(
+        {
+          message: error.message,
+          status: "error",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    if (error instanceof InsufficientCreditsError) {
+      return Response.json(
+        {
+          message: error.message,
+          status: "error",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    return Response.json(
+      {
+        message: "Internal server error",
+        status: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }
