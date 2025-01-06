@@ -24,7 +24,7 @@ import MultipleSelector from "@/components/ui/multiple-selector";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { chatGPTWithPDF } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
+import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 
 export interface Option {
   value: string;
@@ -138,7 +138,8 @@ const ContentBasedOnTitle = ({
   if (!isConnected) return <p>Not connected</p>;
 
   const handleChatGPT = async () => {
-    const response = await chatGPTWithPDF(openai.input, {id: selectedGoogleDriveFile?.id});
+    const fileToUse = selectedGoogleDriveFile ?? undefined;
+    const response = await chatGPT(openai.input, fileToUse);
     setOpenai({ ...openai, output: response });
     console.log(response);
   }
