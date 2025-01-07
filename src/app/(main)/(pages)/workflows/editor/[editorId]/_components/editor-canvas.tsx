@@ -70,6 +70,7 @@ const EditorCanvas = (props: Props) => {
     setSlackMessage,
     setOpenai,
     setSelectedGoogleDriveFile,
+    setCurrentIndex,
   } = useAutoStore();
   const { credits, setCredits } = useBilling();
   const onDragOver = useCallback((event: any) => {
@@ -110,6 +111,7 @@ const EditorCanvas = (props: Props) => {
             metadata: {},
             title: "",
             type: "Trigger",
+            index: 0
           },
           id: "",
           position: { x: 0, y: 0 },
@@ -124,13 +126,18 @@ const EditorCanvas = (props: Props) => {
   }, [nodes, edges]);
 
   const startWorkflow = async () => {
-    const filteredNodes = nodes.filter((node) => node.type !== "Trigger" && node.type !== "Google Drive");
+    let index = 0;
+    const filteredNodes = nodes.filter(
+      (node) => node.type !== "Trigger" && node.type !== "Google Drive"
+    );
 
     if (Number(credits) > 0 || credits === "Unlimited") {
       try {
         let lastNodeOutput = "";
+        setCurrentIndex(0);
 
         for (const node of filteredNodes) {
+          setCurrentIndex(index++);
           let response;
 
           switch (node.type) {
@@ -151,24 +158,36 @@ const EditorCanvas = (props: Props) => {
             case "Notion":
               response = await onStoreNotionContent(nodeConnection);
               if (lastNodeOutput) {
-                await addContextToNotionPage(response?.id, nodeConnection.notionNode.accessToken, lastNodeOutput);
+                await addContextToNotionPage(
+                  response?.id,
+                  nodeConnection.notionNode.accessToken,
+                  lastNodeOutput
+                );
               }
               break;
 
-              case "AI":
-                if (!openai.input) {
-                  throw new Error("AI input is required");
-                }
-                const aiResponse = await chatGPT(openai.input, selectedGoogleDriveFile);
-                setOpenai({ ...openai, output: aiResponse });
-                lastNodeOutput = aiResponse;
-                continue;
+            case "AI":
+              if (!openai.input) {
+                setCurrentIndex(null);
+                throw new Error("AI input is required");
+              }
+              const aiResponse = await chatGPT(
+                openai.input,
+                selectedGoogleDriveFile
+              );
+              setOpenai({ ...openai, output: aiResponse });
+              lastNodeOutput = aiResponse;
+              continue;
 
             default:
               break;
           }
 
-          if (!response || ('message' in response && response.message !== "Success")) {
+          if (
+            !response ||
+            ("message" in response && response.message !== "Success")
+          ) {
+            setCurrentIndex(null);
             toast({
               variant: "destructive",
               title: "Uh oh! Something went wrong.",
@@ -178,22 +197,35 @@ const EditorCanvas = (props: Props) => {
           }
 
           // Update lastNodeOutput for Slack or Notion if needed
-          lastNodeOutput = node.type === "Slack" || node.type === "Notion" ? openai.output : lastNodeOutput;
+          lastNodeOutput =
+            node.type === "Slack" || node.type === "Notion"
+              ? openai.output
+              : lastNodeOutput;
         }
 
         chargeCredit();
+        setCurrentIndex(-1);
+        setTimeout(() => {
+          setCurrentIndex(null);
+        }, 5000);
+
         toast({
           title: "Success",
           description: "Workflow executed successfully",
         });
       } catch (error) {
+        setCurrentIndex(null);
         toast({
           variant: "destructive",
           title: "Uh oh! Something went wrong.",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
         });
       }
     } else {
+      setCurrentIndex(null);
       toast({
         variant: "destructive",
         title: "Not enough credits",
@@ -288,7 +320,7 @@ const EditorCanvas = (props: Props) => {
   const onDrop = useCallback(
     (event: any) => {
       event.preventDefault();
-
+      console.log(state.editor);
       const type: EditorCanvasCardType["type"] = event.dataTransfer.getData(
         "application/reactflow"
       );
@@ -326,6 +358,7 @@ const EditorCanvas = (props: Props) => {
           current: false,
           metadata: {},
           type: type,
+          index: state.editor.elements.length,
         },
       };
 

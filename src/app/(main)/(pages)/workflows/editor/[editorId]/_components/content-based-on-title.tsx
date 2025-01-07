@@ -25,6 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
+// import Typewriter from "./typewriter";
+import Typewriter from "typewriter-effect";
 
 export interface Option {
   value: string;
@@ -60,7 +62,15 @@ const ContentBasedOnTitle = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { setSlackMessage, setNotionValue, notionProperties, selectedGoogleDriveFile, openai, setOpenai } = useAutoStore();
+  const {
+    setSlackMessage,
+    setNotionValue,
+    notionProperties,
+    selectedGoogleDriveFile,
+    openai,
+    setOpenai,
+    setIsStoreLoading,
+  } = useAutoStore();
 
   // useEffect(() => {
   //   const fetchGoogleDriveFiles = async () => {
@@ -138,11 +148,12 @@ const ContentBasedOnTitle = ({
   if (!isConnected) return <p>Not connected</p>;
 
   const handleChatGPT = async () => {
+    setIsStoreLoading(true);
     const fileToUse = selectedGoogleDriveFile ?? undefined;
     const response = await chatGPT(openai.input, fileToUse);
     setOpenai({ ...openai, output: response });
-    console.log(response);
-  }
+    setIsStoreLoading(false);
+  };
 
   return (
     <AccordionContent>
@@ -164,25 +175,34 @@ const ContentBasedOnTitle = ({
 
           {title === "AI" && (
             <div className="space-y-4">
-              {selectedGoogleDriveFile && 
+              {selectedGoogleDriveFile && (
                 <span>Selected File: {selectedGoogleDriveFile?.name}</span>
-              }
+              )}
               <div className="flex flex-col w-full gap-2">
                 <Label htmlFor="message">Your message</Label>
                 <Textarea
-                  onChange={(e) => setOpenai({ ...openai, input: e.target.value })}
+                  onChange={(e) =>
+                    setOpenai({ ...openai, input: e.target.value })
+                  }
                   placeholder="Enter your message here"
                   value={openai.input}
                   id="message"
                 />
-                <Button onClick={handleChatGPT} className="mb-4">Send message</Button>
-                <Label htmlFor="output">Repsonse</Label>
-                <Textarea 
-                  placeholder="Your response"
-                  value={openai.output}
-                  disabled
+                <Button onClick={handleChatGPT} className="mb-4">
+                  Send message
+                </Button>
+                <Label htmlFor="output">Response</Label>
+
+                <Typewriter
+                  options={{
+                    autoStart: true,
+                    strings: [openai.output],
+                    delay: 1,
+                    deleteSpeed: Infinity,
+                    loop: false,
+                  }}
                 />
-              </div>  
+              </div>
               {/* <MultipleSelector
                 options={[]} 
                 disabled={true}

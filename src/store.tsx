@@ -11,6 +11,10 @@ export interface Option {
 }
 
 type AutoStore = {
+  currentIndex: number | null;
+  setCurrentIndex: (index: number | null) => void;
+  isStoreLoading: boolean;
+  setIsStoreLoading: (isStoreLoading: boolean) => void;
   googleDriveFiles: GoogleDriveFile[];
   setGoogleDriveFiles: (googleDriveFiles: GoogleDriveFile[]) => void;
   selectedGoogleDriveFile: GoogleDriveFile | null;
@@ -48,6 +52,10 @@ type AutoStore = {
 };
 
 export const useAutoStore = create<AutoStore>()((set) => ({
+  currentIndex: 0,
+  setCurrentIndex: (index: number) => set({ currentIndex: index }),
+  isStoreLoading: false,
+  setIsStoreLoading: (isStoreLoading: boolean) => set({ isStoreLoading }),
   selectedGoogleDriveFile: null,
   setSelectedGoogleDriveFile: (
     selectedGoogleDriveFile: GoogleDriveFile | null
@@ -90,6 +98,8 @@ export const useAutoStore = create<AutoStore>()((set) => ({
 
   resetStore: () =>
     set({
+      currentIndex: null,
+      isStoreLoading: false,
       selectedGoogleDriveFile: null,
       googleDriveFiles: [],
       googleFile: {},
@@ -109,5 +119,3 @@ export const useAutoStore = create<AutoStore>()((set) => ({
       },
     }),
 }));
-// nodeun verileri bossa ve eski storeu kullaniyor?
-// slack channel calismiytor

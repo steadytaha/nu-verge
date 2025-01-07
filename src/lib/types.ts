@@ -43,6 +43,7 @@ export type EditorCanvasCardType = {
   current: boolean;
   metadata: any;
   type: EditorCanvasTypes;
+  index: number;
 };
 
 export type EditorNodeType = {

@@ -127,7 +127,8 @@ export const onConnections = async (
   if (editorState.editor.selectedNode.data.title == "Notion") {
     const connection = await getNotionConnection();
 
-    const { notionValue, setNotionProperties } = useAutoStore.getState();
+    const { notionValue, setNotionProperties} =
+      useAutoStore.getState();
 
     if (connection) {
       nodeConnection.setNotionNode({
@@ -178,15 +179,21 @@ export const fetchBotSlackChannels = async (
   token: string,
   setSlackChannels: (slackChannels: Option[]) => void
 ) => {
+  const { setIsStoreLoading } = useAutoStore.getState();
+  setIsStoreLoading(true);
   await listBotChannels(token)?.then((channels) => setSlackChannels(channels));
+  setIsStoreLoading(false);
 };
+
 export const fetchNotionProperties = async (
   databaseId: string,
   accessToken: string
 ) => {
-  const { setNotionProperties } = useAutoStore.getState();
+  const { setNotionProperties, setIsStoreLoading } = useAutoStore.getState();
+  setIsStoreLoading(true);
   const response = await getNotionDatabase(databaseId, accessToken);
   if (response) {
+    setIsStoreLoading(false);
     setNotionProperties(getPropertiesFromDatabase(response.metadata));
   }
 };
