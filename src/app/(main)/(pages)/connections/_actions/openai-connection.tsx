@@ -121,7 +121,7 @@ function createPrompt(userQuestion: string, pdfContext: string): string {
 
 export async function chatGPT(
   userInput: string,
-  file?: GoogleDriveFile | Buffer,
+  file?: GoogleDriveFile | Buffer | null,
   options: ChatOptions = {}
 ): Promise<string> {
   try {

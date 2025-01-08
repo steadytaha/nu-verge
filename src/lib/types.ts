@@ -11,7 +11,7 @@ export const WorkflowFormSchema = z.object({
   description: z.string().min(1, "Required"),
 });
 
-export type ConnectionTypes = "Google Drive" | "Notion" | "Slack" | "Discord" | "AI";
+export type ConnectionTypes = "Google Drive" | "Notion" | "Slack" | "Discord" | "AI" | "Condition" | "Wait";
 
 export type Connection = {
   title: ConnectionTypes;
@@ -85,12 +85,16 @@ export type EditorActions =
       };
     };
 
+export type OperatorType = "AND" | "OR" | "NOT" | "EQ" | "NEQ" | "GT" | "LT" | "GTE" | "LTE" | "ISNULL" | "ISNOTNULL" | "CONTAINS" | "LENGTH" | "STARTSWITH" | "ENDSWITH";
+
 export const nodeMapper: Record<string, string> = {
   Notion: "notionNode",
   Slack: "slackNode",
   Discord: "discordNode",
   "Google Drive": "googleNode",
   AI: "openaiNode",
+  Condition: "conditionNode",
+  Wait: "waitNode",
 };
 export type GoogleDriveFile = {
   id: string;

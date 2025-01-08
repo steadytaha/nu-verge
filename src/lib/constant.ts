@@ -144,7 +144,7 @@ export const EditorCanvasDefaultCardTypes = {
   },
   Wait: {
     description: 'Delay the next action step by using the wait timer.',
-    type: 'Action',
+    type: 'Trigger',
   },
 }
 

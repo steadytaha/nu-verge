@@ -1,4 +1,5 @@
 'use client'
+import { OperatorType } from '@/lib/types'
 import { createContext, useContext, useState } from 'react'
 
 export type ConnectionProviderProps = {
@@ -56,6 +57,20 @@ export type ConnectionProviderProps = {
     content: string,
   }
   setOpenaiNode: React.Dispatch<React.SetStateAction<any>>
+  conditionNode: {
+    operator: OperatorType,
+    parameter: string,
+  },
+  setConditionNode: React.Dispatch<React.SetStateAction<any>>
+  waitNode: {
+    jobDetails: {
+      seconds: number,
+      minutes: number,
+      hours: number,
+      type: string
+    },
+  },
+  setWaitNode: React.Dispatch<React.SetStateAction<any>>
 }
 
 type ConnectionWithChildProps = {
@@ -97,6 +112,18 @@ const InitialValues: ConnectionProviderProps = {
     input: '',
     content: '',
   },
+  conditionNode: {
+    operator: "AND",
+    parameter: "",
+  },
+  waitNode: {
+    jobDetails: {
+      seconds: 0,
+      minutes: 0,
+      hours: 0,
+      type: "",
+    },
+  },
   setGoogleNode: () => undefined,
   setDiscordNode: () => undefined,
   setNotionNode: () => undefined,
@@ -105,6 +132,8 @@ const InitialValues: ConnectionProviderProps = {
   setIsLoading: () => undefined,
   setWorkFlowTemplate: () => undefined,
   setNotionDetails: () => undefined,
+  setConditionNode: () => undefined,
+  setWaitNode: () => undefined,
 }
 
 const ConnectionsContext = createContext(InitialValues)
@@ -118,6 +147,8 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
   const [isLoading, setIsLoading] = useState(InitialValues.isLoading)
   const [notionDetails, setNotionDetails] = useState(InitialValues.notionDetails)
   const [openaiNode, setOpenaiNode] = useState(InitialValues.openaiNode)
+  const [conditionNode, setConditionNode] = useState(InitialValues.conditionNode)
+  const [waitNode, setWaitNode] = useState(InitialValues.waitNode)
   const [workflowTemplate, setWorkFlowTemplate] = useState(
     InitialValues.workflowTemplate
   )
@@ -139,6 +170,10 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
     setNotionDetails,
     openaiNode,
     setOpenaiNode,
+    conditionNode,
+    setConditionNode,
+    waitNode,
+    setWaitNode
   }
 
   return <Provider value={values}>{children}</Provider>

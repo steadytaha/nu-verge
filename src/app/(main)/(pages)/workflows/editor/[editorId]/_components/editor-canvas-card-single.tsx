@@ -20,13 +20,12 @@ const EditorCanvasCardSingle = ({ data }: { data: EditorCanvasCardType }) => {
   const { state, dispatch } = useEditor();
   const { currentIndex } = useAutoStore();
   const nodeId = useNodeId();
-  console.log("data", data.index);
   const logo = useMemo(() => {
     return <EditorCanvasIconHelper type={data.type} />;
   }, [data]);
   return (
     <>
-      {data.type !== "Trigger" && data.type !== "Google Drive" && (
+      {data.type !== "Trigger" && data.type !== "Google Drive" && data.type !== "Wait" && (
         <CustomHandle
           type="target"
           position={Position.Top}

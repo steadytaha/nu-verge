@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { GoogleDriveFile, NotionProperty } from "./lib/types";
+import { GoogleDriveFile, NotionProperty, OperatorType } from "./lib/types";
 
 export interface Option {
   value: string;
@@ -48,6 +48,34 @@ type AutoStore = {
     output: string;
   };
   setOpenai: (openai: { input: string; output: string }) => void;
+  conditionNode: {
+    operator: OperatorType;
+    parameter: string;
+    trueValue: string;
+    falseValue: string;
+  };
+  setConditionNode: (conditionNode: {
+    operator: OperatorType;
+    parameter: string;
+    trueValue: string;
+    falseValue: string;
+  }) => void;
+  waitNode: {
+    jobDetails: {
+      seconds: number;
+      minutes: number;
+      hours: number;
+      type: string;
+    };
+  };
+  setWaitNode: (waitNode: {
+    jobDetails: {
+      seconds: number;
+      minutes: number;
+      hours: number;
+      type: string,
+    };
+  }) => void;
   resetStore: () => void;
 };
 
@@ -95,6 +123,28 @@ export const useAutoStore = create<AutoStore>()((set) => ({
     output: "",
   },
   setOpenai: (openai: { input: string; output: string }) => set({ openai }),
+  conditionNode: {
+    operator: "AND",
+    parameter: "",
+    trueValue: "",
+    falseValue: "",
+  },
+  setConditionNode: (conditionNode: {
+    operator: OperatorType;
+    parameter: string;
+    trueValue: string;
+    falseValue: string;
+  }) => set({ conditionNode }),
+  waitNode: {
+    jobDetails: {
+      seconds: 0,
+      minutes: 0,
+      hours: 0,
+      type: "",
+    },
+  },
+  setWaitNode: (waitNode: { jobDetails: { seconds: number; minutes: number; hours: number; type: string; } }) => set({ waitNode }),
+  
 
   resetStore: () =>
     set({
@@ -116,6 +166,20 @@ export const useAutoStore = create<AutoStore>()((set) => ({
       openai: {
         input: "",
         output: "",
+      },
+      conditionNode: {
+        operator: "AND",
+        parameter: "",
+        trueValue: "",
+        falseValue: "",
+      },
+      waitNode: {
+        jobDetails: {
+          seconds: 0,
+          minutes: 0,
+          hours: 0,
+          type: "",
+        },
       },
     }),
 }));

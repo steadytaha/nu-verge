@@ -15,7 +15,7 @@ import {
   ReactFlowInstance,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { EditorCanvasCardType, EditorNodeType } from "@/lib/types";
+import { EditorCanvasCardType, EditorNodeType, OperatorType } from "@/lib/types";
 import { useEditor } from "@/providers/editor-provider";
 import EditorCanvasCardSingle from "./editor-canvas-card-single";
 import {
@@ -64,6 +64,8 @@ const EditorCanvas = (props: Props) => {
     slackMessage,
     openai,
     selectedGoogleDriveFile,
+    conditionNode,
+    waitNode,
     setNotionDetails,
     setNotionValue,
     setSelectedSlackChannels,
@@ -99,6 +101,30 @@ const EditorCanvas = (props: Props) => {
     []
   );
 
+  const getCondition = (operator: OperatorType, value: string, parameter?: string) => {
+    console.log(operator, value, parameter);
+    switch (operator) {
+      case "EQ":
+        return value === parameter;
+      case "NEQ":
+        return value !== parameter;
+      case "GT":
+        return Number(value) > Number(parameter);
+      case "LT":
+        return Number(value) < Number(parameter);
+      case "GTE":
+        return Number(value) >= Number(parameter);
+      case "LTE":
+        return Number(value) <= Number(parameter);
+      case "ISNULL":
+        return value === null;
+      case "ISNOTNULL":
+        return value !== null;
+      default:
+        return false;
+    }
+  }
+
   const handleClickCanvas = () => {
     dispatch({
       type: "SELECTED_ELEMENT",
@@ -128,7 +154,7 @@ const EditorCanvas = (props: Props) => {
   const startWorkflow = async () => {
     let index = 0;
     const filteredNodes = nodes.filter(
-      (node) => node.type !== "Trigger" && node.type !== "Google Drive"
+      (node) => node.type !== "Trigger" && node.type !== "Google Drive" && node.type !== "Wait"
     );
 
     if (Number(credits) > 0 || credits === "Unlimited") {
@@ -177,6 +203,42 @@ const EditorCanvas = (props: Props) => {
               );
               setOpenai({ ...openai, output: aiResponse });
               lastNodeOutput = aiResponse;
+              continue;
+
+            case "Condition":
+              const result = getCondition(
+                conditionNode.operator,
+                lastNodeOutput,
+                conditionNode.parameter
+              );
+              if (result && conditionNode.trueValue) {
+                switch (conditionNode.trueValue) {
+                  case "Slack":
+                    response = await onStoreSlackContent(
+                      {
+                        ...nodeConnection,
+                        slackNode: {
+                          ...nodeConnection.slackNode,
+                          content: lastNodeOutput || nodeConnection.slackNode.content,
+                        },
+                      },
+                      selectedSlackChannels,
+                      setSelectedSlackChannels
+                    );
+                    break;
+                  case "Notion":
+                    response = await onStoreNotionContent(nodeConnection);
+                    if (lastNodeOutput) {
+                      await addContextToNotionPage(
+                        response?.id,
+                        nodeConnection.notionNode.accessToken,
+                        lastNodeOutput
+                      );
+                    }
+                    break;
+                }
+              }
+              setCurrentIndex(index++)
               continue;
 
             default:

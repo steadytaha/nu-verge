@@ -27,6 +27,8 @@ import { Label } from "@/components/ui/label";
 import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 // import Typewriter from "./typewriter";
 import Typewriter from "typewriter-effect";
+import { ConditionSelector } from "./condition-selector";
+import { WaitSelector } from "./wait-selector";
 
 export interface Option {
   value: string;
@@ -131,7 +133,7 @@ const ContentBasedOnTitle = ({
   if (!nodeConnectionType) return <p>Not connected</p>;
 
   const isConnected =
-    title === "Google Drive" || title === "AI"
+    title === "Google Drive" || title === "AI" || title === "Condition" || title === "Wait"
       ? !nodeConnection.isLoading
       : !!nodeConnectionType[
           `${
@@ -154,6 +156,8 @@ const ContentBasedOnTitle = ({
     setOpenai({ ...openai, output: response });
     setIsStoreLoading(false);
   };
+
+  
 
   return (
     <AccordionContent>
@@ -213,7 +217,7 @@ const ContentBasedOnTitle = ({
             </div>
           )}
 
-          {title !== "Google Drive" && title !== "AI" && (
+          {title !== "Google Drive" && title !== "AI" && title !== "Condition" && title !== "Wait" && (
             <Input
               type="text"
               value={nodeConnectionType.content}
@@ -229,6 +233,10 @@ const ContentBasedOnTitle = ({
               placeholder={`Enter your ${title} message here`}
             />
           )}
+
+          {title === "Wait" && <WaitSelector />}
+
+          {title === "Condition" && <ConditionSelector />}
 
           {title === "Notion" && notionProperties.length > 0 ? (
             <NotionPropertiesSelector
