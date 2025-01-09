@@ -50,9 +50,9 @@ export const ConditionSelector = () => {
   const { conditionNode, setConditionNode } = useAutoStore();
   const currentNode = state.editor.selectedNode.data.index;
   const nextNodes = getNextAvailableNodes(state.editor.elements, currentNode);
-
+  
   const handleOperatorChange = (value: OperatorType) => {
-    console.log(value);
+ 
     setConditionNode({ ...conditionNode, operator: value });
   };
 
@@ -96,24 +96,30 @@ export const ConditionSelector = () => {
             </Select>
           </div>
           <div className="space-y-2 w-full">
-            <label className="text-sm font-medium">Parameter</label>
-            <Input
-              className="w-full"
-              placeholder="Parameter"
-              value={conditionNode.parameter}
-              onChange={(e) =>
-                setConditionNode({
-                  ...conditionNode,
-                  parameter: e.target.value,
-                })
-              }
-            />
+           {conditionNode.operator !== "NOT" && conditionNode.operator !== "ISNULL" && conditionNode.operator !== "ISNOTNULL" &&
+            (
+              <>
+              <label className="text-sm font-medium">Parameter</label>
+              <Input
+                className="w-full"
+                placeholder="Enter parameter"
+                value={conditionNode.parameter}
+                onChange={(e) =>
+                  setConditionNode({
+                    ...conditionNode,
+                    parameter: e.target.value,
+                  })
+                }
+              /></>
+            )
+           }
           </div>
         </div>
       </div>
 
-      <div className="space-y-2 mt-auto pt-4">
-        <label className="text-sm font-medium">Select True Path Node</label>
+     <div className="flex justify-between">
+     <div className="space-y-2 mt-auto pt-4">
+        <label className="text-sm font-medium">Next Node (True Condition)</label>
         <Select value={conditionNode.trueValue} onValueChange={handleNextNode}>
           <SelectTrigger className="w-[280px]">
             <SelectValue placeholder="Select node for true condition" />
@@ -130,6 +136,25 @@ export const ConditionSelector = () => {
           </SelectContent>
         </Select>
       </div>
+      <div className="space-y-2 mt-auto pt-4">
+        <label className="text-sm font-medium">Next Node (False Condition)</label>
+        <Select disabled={true} value={conditionNode.falseValue} onValueChange={handleNextNode}>
+          <SelectTrigger className="w-[280px]">
+            <SelectValue placeholder="Select node for true condition" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Next Nodes</SelectLabel>
+              {nextNodes.map((node) => (
+                <SelectItem key={node.id} value={node.type}>
+                  {node.type}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+     </div>
     </div>
   );
 };

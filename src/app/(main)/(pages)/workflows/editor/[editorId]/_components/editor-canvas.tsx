@@ -41,6 +41,7 @@ import { getUserId } from "@/app/(main)/(pages)/connections/_actions/get-user";
 import { useBilling } from "@/providers/billing-provider";
 import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 import { addContextToNotionPage } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
+import { getCondition } from "./editor-canvas-helper";
 type Props = {};
 
 const initialNodes: EditorNodeType[] = [];
@@ -73,6 +74,7 @@ const EditorCanvas = (props: Props) => {
     setOpenai,
     setSelectedGoogleDriveFile,
     setCurrentIndex,
+    setConditionNode
   } = useAutoStore();
   const { credits, setCredits } = useBilling();
   const onDragOver = useCallback((event: any) => {
@@ -101,29 +103,7 @@ const EditorCanvas = (props: Props) => {
     []
   );
 
-  const getCondition = (operator: OperatorType, value: string, parameter?: string) => {
-   
-    switch (operator) {
-      case "EQ":
-        return value === parameter;
-      case "NEQ":
-        return value !== parameter;
-      case "GT":
-        return Number(value) > Number(parameter);
-      case "LT":
-        return Number(value) < Number(parameter);
-      case "GTE":
-        return Number(value) >= Number(parameter);
-      case "LTE":
-        return Number(value) <= Number(parameter);
-      case "ISNULL":
-        return value === null;
-      case "ISNOTNULL":
-        return value !== null;
-      default:
-        return false;
-    }
-  }
+
 
   const handleClickCanvas = () => {
     dispatch({
@@ -393,10 +373,22 @@ const EditorCanvas = (props: Props) => {
             },
           };
           break;
+        case "Condition":
+          updatedNode.data = {
+            ...node.data,
+            metadata: {
+              ...node.data.metadata,
+              operator: conditionNode.operator,
+              trueValue: conditionNode.trueValue,
+              falseValue: conditionNode.falseValue,
+              parameter: conditionNode.parameter,
+            },
+          };
+          break;  
         default:
           break;
       }
-
+    
       return updatedNode;
     });
 
@@ -499,6 +491,14 @@ const EditorCanvas = (props: Props) => {
         }
         if (target.type === "Google Drive") {
           setSelectedGoogleDriveFile(target.metadata.selectedFile);
+        }
+        if(target.type === "Condition") {
+          setConditionNode({
+            operator: target.metadata.operator,
+            trueValue: target.metadata.trueValue,
+            falseValue: target.metadata.falseValue,
+            parameter: target.metadata.parameter,
+          });
         }
       });
   }
