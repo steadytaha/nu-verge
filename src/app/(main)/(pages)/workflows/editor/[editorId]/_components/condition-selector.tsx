@@ -56,13 +56,18 @@ export const ConditionSelector = () => {
     setConditionNode({ ...conditionNode, operator: value });
   };
 
-  const handleNextNode = (value: string) => {
-    const falseValue = nextNodes.find((node) => node.id !== value)?.type || "";
-    setConditionNode({
-      ...conditionNode,
-      trueValue: value,
-      falseValue: falseValue,
-    });
+  const handleNextNode = (selectedType: string) => {
+    // Get the next node that's not selected as true path
+    const falseNode = nextNodes.find((node) => node.type !== selectedType);
+    
+    // Only update if we found both true and false nodes
+    if (falseNode) {
+      setConditionNode({
+        ...conditionNode,
+        trueValue: selectedType,
+        falseValue: falseNode.type
+      });
+    }
   };
 
   return (
@@ -91,7 +96,7 @@ export const ConditionSelector = () => {
             </Select>
           </div>
           <div className="space-y-2 w-full">
-            <label className="text-sm font-medium">Select Operator</label>
+            <label className="text-sm font-medium">Parameter</label>
             <Input
               className="w-full"
               placeholder="Parameter"
@@ -108,10 +113,10 @@ export const ConditionSelector = () => {
       </div>
 
       <div className="space-y-2 mt-auto pt-4">
-        <label className="text-sm font-medium">Select Next Node</label>
+        <label className="text-sm font-medium">Select True Path Node</label>
         <Select value={conditionNode.trueValue} onValueChange={handleNextNode}>
           <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder="Select next node to continue" />
+            <SelectValue placeholder="Select node for true condition" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

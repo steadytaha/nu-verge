@@ -102,7 +102,7 @@ const EditorCanvas = (props: Props) => {
   );
 
   const getCondition = (operator: OperatorType, value: string, parameter?: string) => {
-    console.log(operator, value, parameter);
+   
     switch (operator) {
       case "EQ":
         return value === parameter;
@@ -162,7 +162,8 @@ const EditorCanvas = (props: Props) => {
         let lastNodeOutput = "";
         setCurrentIndex(0);
 
-        for (const node of filteredNodes) {
+        for (let i = 0; i < filteredNodes.length; i++) {
+          const node = filteredNodes[i];
           setCurrentIndex(index++);
           let response;
 
@@ -211,34 +212,60 @@ const EditorCanvas = (props: Props) => {
                 lastNodeOutput,
                 conditionNode.parameter
               );
-              if (result && conditionNode.trueValue) {
-                switch (conditionNode.trueValue) {
-                  case "Slack":
-                    response = await onStoreSlackContent(
-                      {
-                        ...nodeConnection,
-                        slackNode: {
-                          ...nodeConnection.slackNode,
-                          content: lastNodeOutput || nodeConnection.slackNode.content,
-                        },
+
+              // Execute the appropriate node based on condition result
+              if (result) {
+                if (conditionNode.trueValue === "Slack") {
+                  response = await onStoreSlackContent(
+                    {
+                      ...nodeConnection,
+                      slackNode: {
+                        ...nodeConnection.slackNode,
+                        content: lastNodeOutput || nodeConnection.slackNode.content,
                       },
-                      selectedSlackChannels,
-                      setSelectedSlackChannels
+                    },
+                    selectedSlackChannels,
+                    setSelectedSlackChannels
+                  );
+                } else if (conditionNode.trueValue === "Notion") {
+                  response = await onStoreNotionContent(nodeConnection);
+                  if (lastNodeOutput) {
+                    await addContextToNotionPage(
+                      response?.id,
+                      nodeConnection.notionNode.accessToken,
+                      lastNodeOutput
                     );
-                    break;
-                  case "Notion":
-                    response = await onStoreNotionContent(nodeConnection);
-                    if (lastNodeOutput) {
-                      await addContextToNotionPage(
-                        response?.id,
-                        nodeConnection.notionNode.accessToken,
-                        lastNodeOutput
-                      );
-                    }
-                    break;
+                  }
+                }
+              } else {
+               
+                if (conditionNode.falseValue === "Slack") {
+                  response = await onStoreSlackContent(
+                    {
+                      ...nodeConnection,
+                      slackNode: {
+                        ...nodeConnection.slackNode,
+                        content: lastNodeOutput || nodeConnection.slackNode.content,
+                      },
+                    },
+                    selectedSlackChannels,
+                    setSelectedSlackChannels
+                  );
+                } else if (conditionNode.falseValue === "Notion") {
+                  response = await onStoreNotionContent(nodeConnection);
+                  if (lastNodeOutput) {
+                    await addContextToNotionPage(
+                      response?.id,
+                      nodeConnection.notionNode.accessToken,
+                      lastNodeOutput
+                    );
+                  }
                 }
               }
-              setCurrentIndex(index++)
+
+              // Skip the next two nodes (true and false paths) since we've handled them here
+              i += 2;
+              setCurrentIndex(index++);
               continue;
 
             default:
@@ -255,10 +282,9 @@ const EditorCanvas = (props: Props) => {
               title: "Uh oh! Something went wrong.",
               description: `Failed to process ${node.type} node`,
             });
-            return; // Exit the function early if there's an error
+            return;
           }
 
-          // Update lastNodeOutput for Slack or Notion if needed
           lastNodeOutput =
             node.type === "Slack" || node.type === "Notion"
               ? openai.output
@@ -295,7 +321,6 @@ const EditorCanvas = (props: Props) => {
       });
     }
   };
-
   const chargeCredit = async () => {
     const userId = await getUserId();
 

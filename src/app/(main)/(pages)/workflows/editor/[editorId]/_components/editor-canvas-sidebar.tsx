@@ -111,7 +111,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
           </div>
           <Accordion type="multiple">
             <AccordionItem value="Options" className="border-y-[1px] px-2">
-            {state.editor.selectedNode.data.type !== "Condition" || state.editor.selectedNode.data.type !== "Wait" && (
+            {state.editor.selectedNode.data.type !== "Condition" && state.editor.selectedNode.data.type !== "Wait" && (
             <>
               <AccordionTrigger className="!no-underline">
                 Account
