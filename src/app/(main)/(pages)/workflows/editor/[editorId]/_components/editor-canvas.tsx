@@ -67,6 +67,7 @@ const EditorCanvas = (props: Props) => {
     selectedGoogleDriveFile,
     conditionNode,
     waitNode,
+    currentIndex,
     setNotionDetails,
     setNotionValue,
     setSelectedSlackChannels,
@@ -126,27 +127,29 @@ const EditorCanvas = (props: Props) => {
       },
     });
   };
+  const delay = (ms:number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   useEffect(() => {
     dispatch({ type: "LOAD_DATA", payload: { edges, elements: nodes } });
   }, [nodes, edges]);
-
   const startWorkflow = async () => {
-    let index = 0;
     const filteredNodes = nodes.filter(
-      (node) => node.type !== "Trigger" && node.type !== "Google Drive" && node.type !== "Wait"
+      (node) =>
+        node.type !== "Trigger" && node.type !== "Google Drive" && node.type !== "Wait"
     );
-
+  
     if (Number(credits) > 0 || credits === "Unlimited") {
       try {
         let lastNodeOutput = "";
-        setCurrentIndex(0);
-
+        setCurrentIndex(0); // Start at the first node
+  
         for (let i = 0; i < filteredNodes.length; i++) {
           const node = filteredNodes[i];
-          setCurrentIndex(index++);
+          setCurrentIndex(i); // Display the current node
+          await delay(500); // Add a short delay to show the current node
+  
           let response;
-
+  
           switch (node.type) {
             case "Slack":
               response = await onStoreSlackContent(
@@ -161,7 +164,7 @@ const EditorCanvas = (props: Props) => {
                 setSelectedSlackChannels
               );
               break;
-
+  
             case "Notion":
               response = await onStoreNotionContent(nodeConnection);
               if (lastNodeOutput) {
@@ -172,7 +175,7 @@ const EditorCanvas = (props: Props) => {
                 );
               }
               break;
-
+  
             case "AI":
               if (!openai.input) {
                 setCurrentIndex(null);
@@ -185,53 +188,48 @@ const EditorCanvas = (props: Props) => {
               setOpenai({ ...openai, output: aiResponse });
               lastNodeOutput = aiResponse;
               continue;
-
+  
             case "Condition":
-              const result = getCondition(
+              // Display the condition node
+              setCurrentIndex(i);
+              await delay(500); // Wait to show the condition node
+  
+              const conditionResult = getCondition(
                 conditionNode.operator,
                 lastNodeOutput,
                 conditionNode.parameter
               );
-
-              // Execute the appropriate node based on condition result
-              if (result) {
-                if (conditionNode.trueValue === "Slack") {
+  
+              // Determine the result node type
+              const resultNodeType = conditionResult
+                ? conditionNode.trueValue
+                : conditionNode.falseValue;
+  
+              const resultNodeIndex = filteredNodes.findIndex(
+                (n) => n.type === resultNodeType
+              );
+  
+              if (resultNodeIndex !== -1) {
+                // Update the current index to show the result node
+                setCurrentIndex(resultNodeIndex);
+                await delay(500); // Wait to show the result node
+  
+                // Handle the result node as usual
+                const resultNode = filteredNodes[resultNodeIndex];
+                if (resultNode.type === "Slack") {
                   response = await onStoreSlackContent(
                     {
                       ...nodeConnection,
                       slackNode: {
                         ...nodeConnection.slackNode,
-                        content: lastNodeOutput || nodeConnection.slackNode.content,
+                        content:
+                          lastNodeOutput || nodeConnection.slackNode.content,
                       },
                     },
                     selectedSlackChannels,
                     setSelectedSlackChannels
                   );
-                } else if (conditionNode.trueValue === "Notion") {
-                  response = await onStoreNotionContent(nodeConnection);
-                  if (lastNodeOutput) {
-                    await addContextToNotionPage(
-                      response?.id,
-                      nodeConnection.notionNode.accessToken,
-                      lastNodeOutput
-                    );
-                  }
-                }
-              } else {
-               
-                if (conditionNode.falseValue === "Slack") {
-                  response = await onStoreSlackContent(
-                    {
-                      ...nodeConnection,
-                      slackNode: {
-                        ...nodeConnection.slackNode,
-                        content: lastNodeOutput || nodeConnection.slackNode.content,
-                      },
-                    },
-                    selectedSlackChannels,
-                    setSelectedSlackChannels
-                  );
-                } else if (conditionNode.falseValue === "Notion") {
+                } else if (resultNode.type === "Notion") {
                   response = await onStoreNotionContent(nodeConnection);
                   if (lastNodeOutput) {
                     await addContextToNotionPage(
@@ -242,16 +240,15 @@ const EditorCanvas = (props: Props) => {
                   }
                 }
               }
-
-              // Skip the next two nodes (true and false paths) since we've handled them here
-              i += 2;
-              setCurrentIndex(index++);
+  
+              // Skip true/false nodes as they are already handled
+              i += 1;
               continue;
-
+  
             default:
               break;
           }
-
+  
           if (
             !response ||
             ("message" in response && response.message !== "Success")
@@ -264,19 +261,20 @@ const EditorCanvas = (props: Props) => {
             });
             return;
           }
-
+  
+          // Update `lastNodeOutput` for nodes that produce outputs
           lastNodeOutput =
             node.type === "Slack" || node.type === "Notion"
               ? openai.output
               : lastNodeOutput;
         }
-
+  
         chargeCredit();
-        setCurrentIndex(-1);
+        // setCurrentIndex(-1); // Reset index after workflow completion
         setTimeout(() => {
           setCurrentIndex(null);
         }, 5000);
-
+        
         toast({
           title: "Success",
           description: "Workflow executed successfully",
@@ -301,6 +299,8 @@ const EditorCanvas = (props: Props) => {
       });
     }
   };
+  
+  
   const chargeCredit = async () => {
     const userId = await getUserId();
 

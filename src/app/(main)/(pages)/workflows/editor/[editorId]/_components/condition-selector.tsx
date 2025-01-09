@@ -136,7 +136,8 @@ export const ConditionSelector = () => {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2 mt-auto pt-4">
+      {(conditionNode.falseValue) &&
+        <div className="space-y-2 mt-auto pt-4">
         <label className="text-sm font-medium">Next Node (False Condition)</label>
         <Select disabled={true} value={conditionNode.falseValue} onValueChange={handleNextNode}>
           <SelectTrigger className="w-[280px]">
@@ -154,6 +155,7 @@ export const ConditionSelector = () => {
           </SelectContent>
         </Select>
       </div>
+      }
      </div>
     </div>
   );
