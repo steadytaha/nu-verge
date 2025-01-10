@@ -1,7 +1,7 @@
 import { EditorCanvasCardType } from "@/lib/types";
 import { useEditor } from "@/providers/editor-provider";
 import { Position, useNodeId } from "@xyflow/react";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import EditorCanvasIconHelper from "./editor-canvas-card-icon-helper";
 import CustomHandle from "./custom-handle";
 import {
@@ -18,8 +18,21 @@ type Props = {};
 
 const EditorCanvasCardSingle = ({ data }: { data: EditorCanvasCardType }) => {
   const { state, dispatch } = useEditor();
-  const { currentIndex } = useAutoStore();
+  const { currentIndex,conditionNode } = useAutoStore();
+  const [hasWorked,setHasWorked] = useState(false);
   const nodeId = useNodeId();
+
+  useEffect(() => {
+    if (currentIndex == data.index) {
+      setHasWorked(true);
+    }
+  },[currentIndex])
+  useEffect(() => {
+    if(data.type==="Slack"||data.type=="Notion"){
+      setHasWorked(false);
+    }
+  },[conditionNode.trueValue])
+
   const logo = useMemo(() => {
     return <EditorCanvasIconHelper type={data.type} />;
   }, [data]);
@@ -85,7 +98,7 @@ const EditorCanvasCardSingle = ({ data }: { data: EditorCanvasCardType }) => {
         <div
           className={clsx(
             "absolute left-3 top-4 h-2 w-2 rounded-full",
-            data.index <= (currentIndex||-1)
+           ( data.index <= (currentIndex||-1)  && hasWorked)
               ? "bg-green-500" : state.editor.selectedNode.data.index === data.index ? "bg-blue-500"
               : "bg-white"
           )}

@@ -35,6 +35,7 @@ export const runWorkflow = async (
   setCredits: (fn: (prev: string) => string) => void
 ) => {
   const {
+    currentIndex,
     setCurrentIndex,
     openai,
     setOpenai,
@@ -64,7 +65,7 @@ export const runWorkflow = async (
 
     for (let i = 0; i < filteredNodes.length; i++) {
       const node = filteredNodes[i];
-      setCurrentIndex(i);
+      setCurrentIndex(i+1);
       await delay(500);
 
       let response;
@@ -106,7 +107,8 @@ export const runWorkflow = async (
           continue;
 
         case "Condition":
-          setCurrentIndex(i);
+          setCurrentIndex(++i);
+
           await delay(500);
 
           const conditionResult = getCondition(
@@ -122,10 +124,10 @@ export const runWorkflow = async (
           const resultNodeIndex = filteredNodes.findIndex(
             (n) => n.type === resultNodeType
           );
-
+         
           if (resultNodeIndex !== -1) {
-            setCurrentIndex(resultNodeIndex);
-            await delay(500);
+            setCurrentIndex(resultNodeIndex+1);
+            // await delay(500);
 
             const resultNode = filteredNodes[resultNodeIndex];
             if (resultNode.type === "Slack") {
@@ -152,7 +154,7 @@ export const runWorkflow = async (
             }
           }
 
-          i += 1;
+          i ++;
           continue;
 
         default:
