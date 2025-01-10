@@ -32,13 +32,16 @@ import { Button } from "../ui/button"
             <DrawerContent>
                 <DrawerHeader>
                     <DrawerTitle className="text-center">{title}</DrawerTitle>
-                    <DrawerDescription className="text-center flex flex-col items-center gap-4 h-64 overflow-scroll">
-                        {subheading}
-                        {children}
+                    <DrawerDescription asChild >
+                      <div className="text-center flex flex-col items-center gap-4 h-64 overflow-scroll">
+                      {subheading}
+                      {children}
+                      </div>
+                    
                     </DrawerDescription>
                 </DrawerHeader>
                 <DrawerFooter className="flex flex-col gap-4 bg-background border-t-[1px} border-t-muted">
-                    <DrawerClose>
+                    <DrawerClose asChild>
                         <Button
                             variant="ghost"
                             className="w-full"

@@ -7,12 +7,13 @@ type Props = {}
 
 const Workflows = async (props: Props) => {
   const workflows = await onGetWorkflows()
+  console.log(workflows)
   return (
     <div className='relative flex flex-col gap-4'>
         <section className='flex flex-col m-2 gap-4'>
           <MoreCredits />
             {workflows?.length
-              ? workflows.map((flow) => (
+              ? workflows.sort((a, b) => a.name.localeCompare(b.name)).map((flow) => (
                 <Workflow
                   key={flow.id}
                   {...flow}
