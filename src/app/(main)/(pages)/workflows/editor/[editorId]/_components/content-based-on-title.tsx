@@ -29,6 +29,8 @@ import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connec
 import Typewriter from "typewriter-effect";
 import { ConditionSelector } from "./condition-selector";
 import { WaitSelector } from "./wait-selector";
+import { runWorkflow } from "@/lib/workflow-runner";
+import { useBilling } from "@/providers/billing-provider";
 
 export interface Option {
   value: string;
@@ -59,7 +61,8 @@ const ContentBasedOnTitle = ({
   selectedSlackChannels,
   setSelectedSlackChannels,
 }: Props) => {
-  const { selectedNode } = newState.editor;
+  const { credits, setCredits } = useBilling();
+  const { elements, selectedNode } = newState.editor;
   const title = selectedNode.data.title;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +160,9 @@ const ContentBasedOnTitle = ({
     setIsStoreLoading(false);
   };
 
-  
+  const handleExecute = async () => {
+    await runWorkflow(elements, nodeConnection, credits, setCredits);
+  };
 
   return (
     <AccordionContent>
@@ -234,7 +239,7 @@ const ContentBasedOnTitle = ({
             />
           )}
 
-          {title === "Wait" && <WaitSelector />}
+          {title === "Wait" && <WaitSelector onExecute={handleExecute} />}
 
           {title === "Condition" && <ConditionSelector />}
 

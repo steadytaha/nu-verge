@@ -95,7 +95,7 @@ const Connections = async (props: Props) => {
           return (connections[connection.type] = true)
         })
     
-        return { ...connections, 'Google Drive': true, 'OpenAI': true }
+        return { ...connections, 'Google Drive': true, 'AI': true }
       }
     
 

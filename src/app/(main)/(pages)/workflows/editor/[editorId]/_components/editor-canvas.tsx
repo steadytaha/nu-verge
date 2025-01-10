@@ -41,7 +41,8 @@ import { getUserId } from "@/app/(main)/(pages)/connections/_actions/get-user";
 import { useBilling } from "@/providers/billing-provider";
 import { chatGPT } from "@/app/(main)/(pages)/connections/_actions/openai-connection";
 import { addContextToNotionPage } from "@/app/(main)/(pages)/connections/_actions/notion-connection";
-import { getCondition } from "./editor-canvas-helper";
+import { getCondition } from "@/lib/editor-canvas-helper";
+import { runWorkflow } from "@/lib/workflow-runner";
 type Props = {};
 
 const initialNodes: EditorNodeType[] = [];
@@ -75,7 +76,8 @@ const EditorCanvas = (props: Props) => {
     setOpenai,
     setSelectedGoogleDriveFile,
     setCurrentIndex,
-    setConditionNode
+    setConditionNode,
+    setWaitNode,
   } = useAutoStore();
   const { credits, setCredits } = useBilling();
   const onDragOver = useCallback((event: any) => {
@@ -127,179 +129,14 @@ const EditorCanvas = (props: Props) => {
       },
     });
   };
-  const delay = (ms:number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   useEffect(() => {
     dispatch({ type: "LOAD_DATA", payload: { edges, elements: nodes } });
   }, [nodes, edges]);
+
   const startWorkflow = async () => {
-    const filteredNodes = nodes.filter(
-      (node) =>
-        node.type !== "Trigger" && node.type !== "Google Drive" && node.type !== "Wait"
-    );
-  
-    if (Number(credits) > 0 || credits === "Unlimited") {
-      try {
-        let lastNodeOutput = "";
-        setCurrentIndex(0); // Start at the first node
-  
-        for (let i = 0; i < filteredNodes.length; i++) {
-          const node = filteredNodes[i];
-          setCurrentIndex(i); // Display the current node
-          await delay(500); // Add a short delay to show the current node
-  
-          let response;
-  
-          switch (node.type) {
-            case "Slack":
-              response = await onStoreSlackContent(
-                {
-                  ...nodeConnection,
-                  slackNode: {
-                    ...nodeConnection.slackNode,
-                    content: lastNodeOutput || nodeConnection.slackNode.content,
-                  },
-                },
-                selectedSlackChannels,
-                setSelectedSlackChannels
-              );
-              break;
-  
-            case "Notion":
-              response = await onStoreNotionContent(nodeConnection);
-              if (lastNodeOutput) {
-                await addContextToNotionPage(
-                  response?.id,
-                  nodeConnection.notionNode.accessToken,
-                  lastNodeOutput
-                );
-              }
-              break;
-  
-            case "AI":
-              if (!openai.input) {
-                setCurrentIndex(null);
-                throw new Error("AI input is required");
-              }
-              const aiResponse = await chatGPT(
-                openai.input,
-                selectedGoogleDriveFile
-              );
-              setOpenai({ ...openai, output: aiResponse });
-              lastNodeOutput = aiResponse;
-              continue;
-  
-            case "Condition":
-              // Display the condition node
-              setCurrentIndex(i);
-              await delay(500); // Wait to show the condition node
-  
-              const conditionResult = getCondition(
-                conditionNode.operator,
-                lastNodeOutput,
-                conditionNode.parameter
-              );
-  
-              // Determine the result node type
-              const resultNodeType = conditionResult
-                ? conditionNode.trueValue
-                : conditionNode.falseValue;
-  
-              const resultNodeIndex = filteredNodes.findIndex(
-                (n) => n.type === resultNodeType
-              );
-  
-              if (resultNodeIndex !== -1) {
-                // Update the current index to show the result node
-                setCurrentIndex(resultNodeIndex);
-                await delay(500); // Wait to show the result node
-  
-                // Handle the result node as usual
-                const resultNode = filteredNodes[resultNodeIndex];
-                if (resultNode.type === "Slack") {
-                  response = await onStoreSlackContent(
-                    {
-                      ...nodeConnection,
-                      slackNode: {
-                        ...nodeConnection.slackNode,
-                        content:
-                          lastNodeOutput || nodeConnection.slackNode.content,
-                      },
-                    },
-                    selectedSlackChannels,
-                    setSelectedSlackChannels
-                  );
-                } else if (resultNode.type === "Notion") {
-                  response = await onStoreNotionContent(nodeConnection);
-                  if (lastNodeOutput) {
-                    await addContextToNotionPage(
-                      response?.id,
-                      nodeConnection.notionNode.accessToken,
-                      lastNodeOutput
-                    );
-                  }
-                }
-              }
-  
-              // Skip true/false nodes as they are already handled
-              i += 1;
-              continue;
-  
-            default:
-              break;
-          }
-  
-          if (
-            !response ||
-            ("message" in response && response.message !== "Success")
-          ) {
-            setCurrentIndex(null);
-            toast({
-              variant: "destructive",
-              title: "Uh oh! Something went wrong.",
-              description: `Failed to process ${node.type} node`,
-            });
-            return;
-          }
-  
-          // Update `lastNodeOutput` for nodes that produce outputs
-          lastNodeOutput =
-            node.type === "Slack" || node.type === "Notion"
-              ? openai.output
-              : lastNodeOutput;
-        }
-  
-        chargeCredit();
-        // setCurrentIndex(-1); // Reset index after workflow completion
-        setTimeout(() => {
-          setCurrentIndex(null);
-        }, 5000);
-        
-        toast({
-          title: "Success",
-          description: "Workflow executed successfully",
-        });
-      } catch (error) {
-        setCurrentIndex(null);
-        toast({
-          variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-          description:
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred",
-        });
-      }
-    } else {
-      setCurrentIndex(null);
-      toast({
-        variant: "destructive",
-        title: "Not enough credits",
-        description: "You need to have at least 1 credit to run the workflow",
-      });
-    }
+    await runWorkflow(nodes, nodeConnection, credits, setCredits);
   };
-  
   
   const chargeCredit = async () => {
     const userId = await getUserId();
@@ -384,7 +221,19 @@ const EditorCanvas = (props: Props) => {
               parameter: conditionNode.parameter,
             },
           };
-          break;  
+          break;
+        case "Wait":
+          updatedNode.data = {
+            ...node.data,
+            metadata: {
+              ...node.data.metadata,
+              type: waitNode.jobDetails.type,
+              hours: waitNode.jobDetails.hours,
+              minutes: waitNode.jobDetails.minutes,
+              seconds: waitNode.jobDetails.seconds,
+            },
+          };
+          break;
         default:
           break;
       }
@@ -498,6 +347,16 @@ const EditorCanvas = (props: Props) => {
             trueValue: target.metadata.trueValue,
             falseValue: target.metadata.falseValue,
             parameter: target.metadata.parameter,
+          });
+        }
+        if(target.type === "Wait") {
+          setWaitNode({
+            jobDetails: {
+              type: target.metadata.type,
+              hours: target.metadata.hours,
+              minutes: target.metadata.minutes,
+              seconds: target.metadata.seconds,
+            },
           });
         }
       });
