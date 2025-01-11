@@ -19,6 +19,7 @@ import {
   Play,
 } from "lucide-react";
 import { ModeToggle } from "../global/mode-toggle";
+import Image from "next/image";
 
 type Props = {};
 
@@ -53,11 +54,17 @@ const MenuOptions = (props: Props) => {
       <nav
         className={`${
           isOpen ? "block" : "hidden"
-        } dark:bg-black h-screen overflow-scroll justify-between md:flex items-center min-w-24 md:min-w-0 flex-col gap-10 py-6 px-2 pt-12 md:pt-6`}
+        } dark:bg-black h-screen overflow-scroll justify-between md:flex items-center min-w-24 md:min-w-0 flex-col gap-10 py-6 px-2 pt-4 md:pt-4`}
       >
         <div className="flex items-center justify-center flex-col gap-8">
           <Link className="flex font-bold flex-row" href="/">
-            Little's
+            <Image
+              src="/black-logo-letter.png"
+              width={40}
+              height={40}
+              alt="Logo"
+              className="shadow-sm"
+            />
           </Link>
           <TooltipProvider>
             {menuOptions.map((menuItem) => (

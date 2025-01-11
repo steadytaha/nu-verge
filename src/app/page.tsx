@@ -26,7 +26,7 @@ export default function Home() {
                     </span>
                   </Button>
                   <h1 className="text-5xl md:text-8xl bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-600 font-sans font-bold">
-                    Automate Your Work With Little's
+                    Automate Your Work With NuVerge
                   </h1>
                 </div>
               }

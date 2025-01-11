@@ -16,7 +16,7 @@ import { BillingProvider } from "@/providers/billing-provider";
 const font = DM_Sans({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Little",
+  title: "NuVerge",
   description: "Automate Your Work Easily!",
 };
 
