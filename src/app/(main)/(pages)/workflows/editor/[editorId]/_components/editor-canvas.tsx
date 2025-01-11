@@ -132,27 +132,7 @@ const EditorCanvas = (props: Props) => {
   const startWorkflow = async () => {
     await runWorkflow(nodes, nodeConnection, credits, setCredits);
   };
-  
-  const chargeCredit = async () => {
-    const userId = await getUserId();
 
-    try {
-      const response = await axios.post(
-        `https://localhost:3000/api/drive-activity/notification`,
-        null,
-        {
-          headers: {
-            "user-id": userId,
-          },
-        }
-      );
-      console.log(response.data); // Logs the response from the server
-    } catch (error: any) {
-      console.error("Error:", error.response?.data || error.message); // Logs any errors
-    } finally {
-      setCredits((prevCredits) => (Number(prevCredits) - 1).toString());
-    }
-  };
   const updateNodes = () => {
     const updatedNodes = nodes.map((node) => {
       const updatedNode = { ...node }; // Create a copy of the node
@@ -417,7 +397,7 @@ const EditorCanvas = (props: Props) => {
                 onClick={handleClickCanvas}
                 nodeTypes={nodeTypes}
               >
-                <Controls position="top-left" />
+                <Controls className="text-black" position="top-left" />
                 <MiniMap
                   position="bottom-left"
                   className="!bg-background"

@@ -146,6 +146,22 @@ export const onCreateNodeTemplate = async (
       if (workflow) return workflow
     }
   }
+  export const onGetWorkflowsByName = async (searchKey:string) => {
+    const user = await currentUser()
+    if (user) {
+      const workflow = await db.workflows.findMany({
+        where: {
+          userId: user.id,
+          name: {
+            contains: searchKey, // Partial match
+            mode: 'insensitive', // Case-insensitive
+          },
+        },
+      })
+  
+      if (workflow) return workflow
+    }
+  }
   
   export const onCreateWorkflow = async (name: string, description: string) => {
     const user = await currentUser()
