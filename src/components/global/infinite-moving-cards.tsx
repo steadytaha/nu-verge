@@ -69,7 +69,7 @@ export const InfiniteMovingCards = ({
       }
     }
   }
-  console.log(items)
+  
   return (
     <div
     style={{
@@ -93,10 +93,11 @@ export const InfiniteMovingCards = ({
         {items.map((item, idx) => (
           <Image
             width={170}
-            height={1}
+            // default value 1 for height, but it causes console warning
+            height={55}
             src={item.href}
             alt={item.href}
-            className=" relative rounded-2xl  object-contain opacity-50"
+            className=" relative rounded-2xl  object-contain opacity-50 bg-gray-500 p-2 dark:bg-inherit dark:p-0"
             key={item.href}
           />
         ))}

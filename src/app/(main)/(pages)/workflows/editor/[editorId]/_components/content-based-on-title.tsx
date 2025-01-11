@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { onContentChange } from "@/lib/editor-utils";
 import GoogleFileDetails from "./google-file-details";
 import GoogleDriveFiles from "./google-drive-files";
-import ActionButton from "./action-button";
+
 import axios, { AxiosError } from "axios";
 import { toast } from "@/hooks/use-toast";
 import NotionPropertiesSelector from "./notion-properties-selector";
@@ -290,12 +290,7 @@ const ContentBasedOnTitle = ({
 
           {title === "Google Drive" && <GoogleDriveFiles />}
 
-          <ActionButton
-            currentService={title}
-            nodeConnection={nodeConnection}
-            channels={selectedSlackChannels}
-            setChannels={setSelectedSlackChannels}
-          />
+      
         </div>
       </Card>
     </AccordionContent>

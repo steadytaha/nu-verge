@@ -19,7 +19,15 @@ const Page = (props: Props) => {
     console.log("Resetting store");
   }, [pathname, resetStore]);
   return (
-    <div className="h-full">
+    <div className="h-full relative">
+      {/* Display a message on mobile screens */}
+      <section className="h-full w-full backdrop-blur-sm absolute z-50 flex items-center justify-center text-white px-4 md:hidden">
+        <p className="text-center">
+          This page cannot be displayed on mobile devices. Please use a larger screen for the full experience.
+        </p>
+      </section>
+  
+      {/* Editor content wrapped inside providers */}
       <EditorProvider>
         <ConnectionsProvider>
           <EditorCanvas />
@@ -27,6 +35,7 @@ const Page = (props: Props) => {
       </EditorProvider>
     </div>
   );
+  
 };
 
 export default Page;

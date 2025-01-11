@@ -36,6 +36,7 @@ const WorkflowForm = ({ title, subTitle }: Props) => {
     const workflow = await onCreateWorkflow(values.name, values.description)
     if (workflow) {
       toast({
+        variant: workflow.message==="A workflow with this name already exists" ? 'destructive' : 'default',
         description: workflow.message
       })
       router.refresh()

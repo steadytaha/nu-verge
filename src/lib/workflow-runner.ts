@@ -61,12 +61,16 @@ export const runWorkflow = async (
 
   try {
     let lastNodeOutput = "";
-    setCurrentIndex(0);
 
+    setCurrentIndex(0);
+    await delay(500);
+  
     for (let i = 0; i < filteredNodes.length; i++) {
+   
       const node = filteredNodes[i];
+  
       setCurrentIndex(i+1);
-      await delay(500);
+    
 
       let response;
 

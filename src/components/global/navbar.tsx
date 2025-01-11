@@ -22,7 +22,7 @@ const Navbar = async (props: Props) => {
                     className='shadow-sm'/>
                 <p className='text-3xl font-bold'>tle</p>
             </aside>
-            <nav className='absolute left-[50%] top-[50%] transform translate-x-[-50%] translate-y-[-50%] hidden md:block'>
+            <nav className='absolute left-[50%] top-[50%] transform translate-x-[-50%] translate-y-[-50%] hidden md:block text-white'>
                 <ul className='flex items-center gap-4 list-none'>
                     <li>
                         <Link href='#'>Products</Link>
@@ -53,7 +53,7 @@ const Navbar = async (props: Props) => {
                         </span>
                     </Link>
                     {user ? <UserButton /> : null}
-                    <MenuIcon className='md:hidden'></MenuIcon>
+                  
             </aside>
         </header>
     )

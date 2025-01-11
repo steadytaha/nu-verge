@@ -151,7 +151,17 @@ export const onCreateNodeTemplate = async (
     const user = await currentUser()
   
     if (user) {
-      //create new workflow
+       // Check if a workflow with the same name already exists for the user
+      const existingWorkflow = await db.workflows.findFirst({
+      where: {
+      userId: user.id,
+      name: name,
+      },
+  });
+
+    if (existingWorkflow) {
+    return { message: 'A workflow with this name already exists' };
+  }
       const workflow = await db.workflows.create({
         data: {
           userId: user.id,
