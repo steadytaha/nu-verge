@@ -13,7 +13,7 @@ const chargeCredit = async (setCredits: (fn: (prev: string) => string) => void) 
   const userId = await getUserId();
   try {
     await axios.post(
-      `https://localhost:3000/api/drive-activity/notification`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/drive-activity/notification`,
       null,
       {
         headers: {
