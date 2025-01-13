@@ -9,38 +9,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAutoStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Pause, Play } from "lucide-react";
-import { toast } from '@/hooks/use-toast';
 
 interface WaitSelectorProps {
   onExecute: () => void;
 }
 
 export const WaitSelector: React.FC<WaitSelectorProps> = ({ onExecute }) => {
-  const { waitNode, setWaitNode } = useAutoStore();
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
-  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-  const [displayIntervalId, setDisplayIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [timers, setTimers] = useState<NodeJS.Timeout[]>([]);
+  const [type, setType] = useState<'After' | 'Every'>('After');
+  const [time, setTime] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
 
   const validateTiming = () => {
-    const { hours, minutes, seconds } = waitNode.jobDetails;
-    if (hours === 0 && minutes === 0 && seconds === 0) {
-      toast({
-        variant: "destructive",
-        title: "Invalid timing",
-        description: "Please set a time greater than 0",
-      });
-      return false;
-    }
-    return true;
+    const { hours, minutes, seconds } = time;
+    return !(hours === 0 && minutes === 0 && seconds === 0);
   };
 
   const getMilliseconds = (): number => {
-    const { hours, minutes, seconds } = waitNode.jobDetails;
+    const { hours, minutes, seconds } = time;
     return (hours * 3600 + minutes * 60 + seconds) * 1000;
   };
 
@@ -53,83 +46,88 @@ export const WaitSelector: React.FC<WaitSelectorProps> = ({ onExecute }) => {
 
   const startTimer = () => {
     if (!validateTiming()) return;
-    setTimeLeft('')
-    setTimerId(null)
-    setIntervalId(null)
-    setDisplayIntervalId(null)
 
-    const timeInMs = getMilliseconds();
-    const endTime = Date.now() + timeInMs;
-
+    // Clear any existing timers and state
     stopTimer();
-
-    if (waitNode.jobDetails.type === "After") {
-      const newTimerId = setTimeout(() => {
-        onExecute();
-        stopTimer();
-      }, timeInMs);
-      setTimerId(newTimerId);
+    
+    const timeInMs = getMilliseconds();
+    const startTime = Date.now();
+    const endTime = startTime + timeInMs;
+    const newTimers: NodeJS.Timeout[] = [];
+    
+    if (type === "After") {
+      // Set initial time left
+      setTimeLeft(formatTimeLeft(timeInMs));
+      
+      // For "After" type, set a single timeout and update display
+      const displayTimer = setInterval(() => {
+        const now = Date.now();
+        const remaining = endTime - now;
+        
+        if (remaining <= 0) {
+          onExecute();
+          stopTimer();
+        } else {
+          setTimeLeft(formatTimeLeft(remaining));
+        }
+      }, 1000);
+      
+      newTimers.push(displayTimer);
     } else {
-      onExecute();
-      const newIntervalId = setInterval(onExecute, timeInMs);
-      setIntervalId(newIntervalId);
-    }
+      // For "Every" type
+      // Set initial time left
+      setTimeLeft(formatTimeLeft(timeInMs));
+      
+      onExecute(); // Execute immediately
 
-    const newDisplayIntervalId = setInterval(() => {
-      const now = Date.now();
-      if (waitNode.jobDetails.type === "After" && now >= endTime) {
-        setTimeLeft('');
-        clearInterval(newDisplayIntervalId);
-      } else {
-        const remaining = waitNode.jobDetails.type === "After"
-          ? endTime - now
-          : timeInMs - (now % timeInMs);
+      // Set up the execution interval
+      const executeTimer = setInterval(() => {
+        onExecute();
+      }, timeInMs);
+
+      // Set up the display update interval
+      const displayTimer = setInterval(() => {
+        const now = Date.now();
+        const elapsed = (now - startTime) % timeInMs;
+        const remaining = timeInMs - elapsed;
         setTimeLeft(formatTimeLeft(remaining));
-      }
-    }, 1000);
+      }, 1000);
 
-    setDisplayIntervalId(newDisplayIntervalId);
+      newTimers.push(executeTimer, displayTimer);
+    }
+    
+    setTimers(newTimers);
     setIsRunning(true);
   };
 
   const stopTimer = () => {
-    [timerId, intervalId, displayIntervalId].forEach(id => id && clearInterval(id));
-    setTimerId(null);
-    setIntervalId(null); 
-    setDisplayIntervalId(null);
+    timers.forEach(timer => clearInterval(timer));
+    setTimers([]);
     setTimeLeft('');
     setIsRunning(false);
   };
 
   const handleInputChange = (field: 'hours' | 'minutes' | 'seconds', value: string) => {
     const numValue = Math.max(0, Math.min(field === 'hours' ? 23 : 59, parseInt(value) || 0));
-    setWaitNode({
-      ...waitNode,
-      jobDetails: {
-        ...waitNode.jobDetails,
-        [field]: numValue
-      }
-    });
+    setTime(prev => ({
+      ...prev,
+      [field]: numValue
+    }));
   };
 
   useEffect(() => {
     return () => {
-      stopTimer();
+      timers.forEach(timer => clearInterval(timer));
     };
-  }, []);
+  }, [timers]);
 
   return (
     <div className="space-y-8">
       <div className="space-y-2">
         <label className="text-sm font-medium">Execution Type</label>
         <Select
-          value={waitNode.jobDetails.type}
-          onValueChange={(value) => {
-            setWaitNode({
-              ...waitNode,
-              jobDetails: { ...waitNode.jobDetails, type: value },
-            });
-          }}
+          value={type}
+          onValueChange={(value: 'After' | 'Every') => setType(value)}
           disabled={isRunning}
         >
           <SelectTrigger className="w-[180px]">
@@ -145,43 +143,52 @@ export const WaitSelector: React.FC<WaitSelectorProps> = ({ onExecute }) => {
         </Select>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Duration</label>
-        <div className="flex justify-between gap-1 items-center">
-          <Input 
-            placeholder="Hours" 
-            type="number"
-            min="0"
-            max="24"
-            value={waitNode.jobDetails.hours} 
-            onChange={(e) => handleInputChange('hours', e.target.value)}
-            disabled={isRunning}
-            className="w-full"
-          />
+      <div className="flex justify-between gap-1 items-center">
+          <div className="flex flex-col w-full">
+            <label htmlFor="hours" className="text-xs text-muted-foreground mb-1">Hours</label>
+            <Input 
+              id="hours"
+              placeholder="Hours" 
+              type="number"
+              min="0"
+              max="24"
+              value={time.hours} 
+              onChange={(e) => handleInputChange('hours', e.target.value)}
+              disabled={isRunning}
+              className="w-full"
+            />
+          </div>
           :
-          <Input 
-            placeholder="Minutes" 
-            type="number"
-            min="0"
-            max="59"
-            value={waitNode.jobDetails.minutes} 
-            onChange={(e) => handleInputChange('minutes', e.target.value)}
-            disabled={isRunning}
-            className="w-full"
-          />
+          <div className="flex flex-col w-full">
+            <label htmlFor="minutes" className="text-xs text-muted-foreground mb-1">Minutes</label>
+            <Input 
+              id="minutes"
+              placeholder="Minutes" 
+              type="number"
+              min="0"
+              max="59"
+              value={time.minutes} 
+              onChange={(e) => handleInputChange('minutes', e.target.value)}
+              disabled={isRunning}
+              className="w-full"
+            />
+          </div>
           :
-          <Input 
-            placeholder="Seconds" 
-            type="number"
-            min="0"
-            max="59"
-            value={waitNode.jobDetails.seconds} 
-            onChange={(e) => handleInputChange('seconds', e.target.value)}
-            disabled={isRunning}
-            className="w-full"
-          />
+          <div className="flex flex-col w-full">
+            <label htmlFor="seconds" className="text-xs text-muted-foreground mb-1">Seconds</label>
+            <Input 
+              id="seconds"
+              placeholder="Seconds" 
+              type="number"
+              min="0"
+              max="59"
+              value={time.seconds} 
+              onChange={(e) => handleInputChange('seconds', e.target.value)}
+              disabled={isRunning}
+              className="w-full"
+            />
+          </div>
         </div>
-      </div>
 
       {timeLeft && (
         <div className="text-sm text-muted-foreground text-center">
@@ -209,3 +216,5 @@ export const WaitSelector: React.FC<WaitSelectorProps> = ({ onExecute }) => {
     </div>
   );
 };
+
+export default WaitSelector;
